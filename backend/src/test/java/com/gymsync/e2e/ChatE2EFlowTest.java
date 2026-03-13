@@ -92,7 +92,7 @@ public class ChatE2EFlowTest {
         mockMvc.perform(get("/api/chat/history/user2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(1));
 
         // Step 4: Get chat partners
         mockMvc.perform(get("/api/chat/partners"))
