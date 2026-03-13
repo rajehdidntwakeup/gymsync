@@ -1,6 +1,7 @@
 package com.gymsync.controller;
 
 import com.gymsync.model.ChatMessage;
+import com.gymsync.model.MessageType;
 import com.gymsync.model.User;
 import com.gymsync.repository.ChatMessageRepository;
 import com.gymsync.repository.UserRepository;

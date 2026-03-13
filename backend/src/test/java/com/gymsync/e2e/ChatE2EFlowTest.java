@@ -80,7 +80,7 @@ class ChatE2EFlowTest {
 
         // Step 2: User2 sends reply
         mockMvc.perform(post("/api/chat/send")
-                        .with(csrf().asUser())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest("user1", "Sure! When?", com.gymsync.model.MessageType.CHAT))))
                 .andExpect(status().isOk());
