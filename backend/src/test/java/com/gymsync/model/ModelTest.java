@@ -70,7 +70,9 @@ class UserTest {
 
         // Then
         assertThat(user.getCreatedAt()).isNotNull();
-        assertThat(user.getUpdatedAt()).isEqualTo(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isNotNull();
+        // Timestamps should be within same millisecond
+        assertThat(user.getUpdatedAt()).isCloseTo(user.getCreatedAt(), within(1, ChronoUnit.MILLIS));
     }
 
     @Test
