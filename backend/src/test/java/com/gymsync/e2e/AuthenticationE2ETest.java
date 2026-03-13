@@ -1,8 +1,10 @@
 package com.gymsync.e2e;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gymsync.config.TestSecurityConfig;
 import com.gymsync.model.User;
 import com.gymsync.repository.UserRepository;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@Import(TestSecurityConfig.class)
 class AuthenticationE2ETest {
 
     @Autowired
