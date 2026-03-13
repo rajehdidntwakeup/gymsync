@@ -13,11 +13,15 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class UserController {
 
+    private String getUsername(Principal principal) {
+        return principal != null ? principal.getName() : "anonymous";
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Principal principal) {
-        // TODO: Implement
+        String username = getUsername(principal);
         return ResponseEntity.ok(Map.of(
-            "username", principal.getName(),
+            "username", username,
             "name", "Test User",
             "fitnessLevel", "INTERMEDIATE"
         ));
@@ -25,7 +29,7 @@ public class UserController {
 
     @PutMapping("/me")
     public ResponseEntity<?> updateProfile(@RequestBody User user, Principal principal) {
-        // TODO: Implement
+        String username = getUsername(principal);
         return ResponseEntity.ok(user);
     }
 
@@ -36,13 +40,13 @@ public class UserController {
 
     @PostMapping("/schedule")
     public ResponseEntity<?> setSchedule(@RequestBody Map<String, Object> request, Principal principal) {
-        // TODO: Implement
+        String username = getUsername(principal);
         return ResponseEntity.ok(request);
     }
 
     @GetMapping("/schedule")
     public ResponseEntity<?> getSchedule(Principal principal) {
-        // TODO: Implement
+        String username = getUsername(principal);
         return ResponseEntity.ok(List.of());
     }
 
@@ -51,7 +55,7 @@ public class UserController {
             @RequestParam String gymLocation,
             @RequestParam String fitnessLevel,
             Principal principal) {
-        // TODO: Implement
+        String username = getUsername(principal);
         return ResponseEntity.ok(List.of());
     }
 }
