@@ -14,4 +14,4 @@ CREATE TABLE chat_messages (
 CREATE INDEX idx_chat_sender ON chat_messages(sender_id);
 CREATE INDEX idx_chat_receiver ON chat_messages(receiver_id);
 CREATE INDEX idx_chat_timestamp ON chat_messages(timestamp);
-CREATE INDEX idx_chat_unread ON chat_messages(receiver_id, read) WHERE read = FALSE;
+CREATE INDEX idx_chat_unread ON chat_messages(receiver_id, read);
