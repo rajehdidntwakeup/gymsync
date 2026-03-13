@@ -61,6 +61,7 @@ class ChatControllerTest {
         message.setSender(sender);
         message.setReceiver(receiver);
         message.setContent("Hello!");
+        message.onCreate(); // Set timestamp
     }
 
     @Test
