@@ -70,7 +70,7 @@ class ChatE2EFlowTest {
         ChatMessageRequest request1 = new ChatMessageRequest();
         request1.setReceiverUsername("user2");
         request1.setContent("Hey, want to work out together?");
-        request1.setType(MessageType.CHAT);
+        request1.setType(com.gymsync.model.MessageType.CHAT);
 
         mockMvc.perform(post("/api/chat/send")
                         .with(csrf())
@@ -82,7 +82,7 @@ class ChatE2EFlowTest {
         mockMvc.perform(post("/api/chat/send")
                         .with(csrf().asUser())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createRequest("user1", "Sure! When?", MessageType.CHAT))))
+                        .content(objectMapper.writeValueAsString(createRequest("user1", "Sure! When?", com.gymsync.model.MessageType.CHAT))))
                 .andExpect(status().isOk());
 
         // Step 3: Get chat history
