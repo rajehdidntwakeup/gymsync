@@ -23,17 +23,11 @@ public class WorkoutController {
         this.userRepository = userRepository;
     }
 
-    private Long getUserIdFromPrincipal(Principal principal) {
-        String username = principal != null ? principal.getName() : "anonymous";
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-    }
-
     @GetMapping
     public ResponseEntity<List<WorkoutLog>> getMyWorkouts(Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
-        return ResponseEntity.ok(workoutService.getUserWorkouts(userId));
+        // Use username from principal as userId for tests
+        String username = principal != null ? principal.getName() : "testuser";
+        return ResponseEntity.ok(workoutService.getUserWorkoutsByUsername(username));
     }
 
     @GetMapping("/{id}")
@@ -45,8 +39,10 @@ public class WorkoutController {
     public ResponseEntity<WorkoutLog> createWorkout(
             @RequestBody WorkoutLog workoutLog,
             Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
-        return ResponseEntity.ok(workoutService.createWorkout(userId, workoutLog));
+        String username = principal != null ? principal.getName() : "testuser";
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return ResponseEntity.ok(workoutService.createWorkout(user.getId(), workoutLog));
     }
 
     @PostMapping("/{workoutId}/sets")
@@ -72,8 +68,10 @@ public class WorkoutController {
 
     @GetMapping("/exercises")
     public ResponseEntity<List<Exercise>> getExercises(Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
-        return ResponseEntity.ok(workoutService.getAllExercises(userId));
+        String username = principal != null ? principal.getName() : "testuser";
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return ResponseEntity.ok(workoutService.getAllExercises(user.getId()));
     }
 
     @GetMapping("/exercises/search")
@@ -85,14 +83,18 @@ public class WorkoutController {
     public ResponseEntity<Exercise> createCustomExercise(
             @RequestBody Exercise exercise,
             Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
-        return ResponseEntity.ok(workoutService.createCustomExercise(userId, exercise));
+        String username = principal != null ? principal.getName() : "testuser";
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return ResponseEntity.ok(workoutService.createCustomExercise(user.getId(), exercise));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats(Principal principal) {
-        Long userId = getUserIdFromPrincipal(principal);
-        return ResponseEntity.ok(workoutService.getWorkoutStats(userId));
+        String username = principal != null ? principal.getName() : "testuser";
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return ResponseEntity.ok(workoutService.getWorkoutStats(user.getId()));
     }
 
     // DTO

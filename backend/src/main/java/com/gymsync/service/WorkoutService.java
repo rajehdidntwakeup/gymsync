@@ -33,6 +33,12 @@ public class WorkoutService {
         return workoutLogRepository.findByUserOrderByWorkoutDateDesc(user);
     }
 
+    public List<WorkoutLog> getUserWorkoutsByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return workoutLogRepository.findByUserOrderByWorkoutDateDesc(user);
+    }
+
     public WorkoutLog getWorkoutById(Long workoutId) {
         return workoutLogRepository.findByIdWithExerciseSets(workoutId);
     }
