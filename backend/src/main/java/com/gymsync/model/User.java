@@ -1,7 +1,6 @@
 package com.gymsync.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -26,7 +25,7 @@ public class User {
     
     @NotBlank
     @Size(max = 100)
-    @Email
+    @jakarta.validation.constraints.Email
     private String email;
     
     @NotBlank
@@ -84,15 +83,4 @@ public class User {
     
     public Set<TimeSlot> getAvailableSlots() { return availableSlots; }
     public void setAvailableSlots(Set<TimeSlot> slots) { this.availableSlots = slots; }
-}
-
-enum FitnessLevel {
-    BEGINNER, INTERMEDIATE, ADVANCED
-}
-
-@Embeddable
-class TimeSlot {
-    private String dayOfWeek;
-    private String startTime;
-    private String endTime;
 }

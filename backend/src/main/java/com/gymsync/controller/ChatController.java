@@ -49,7 +49,7 @@ public class ChatController {
         message.setSender(sender);
         message.setReceiver(receiver);
         message.setContent(request.getContent());
-        message.setType(request.getType() != null ? request.getType() : com.gymsync.model.MessageType.CHAT);
+        message.setType(request.getType() != null ? request.getType() : MessageType.CHAT);
 
         ChatMessage saved = chatMessageRepository.save(message);
 
@@ -122,14 +122,14 @@ public class ChatController {
     public static class ChatMessageRequest {
         private String receiverUsername;
         private String content;
-        private com.gymsync.model.MessageType type;
+        private MessageType type;
 
         public String getReceiverUsername() { return receiverUsername; }
         public void setReceiverUsername(String receiverUsername) { this.receiverUsername = receiverUsername; }
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
-        public com.gymsync.model.MessageType getType() { return type; }
-        public void setType(com.gymsync.model.MessageType type) { this.type = type; }
+        public MessageType getType() { return type; }
+        public void setType(MessageType type) { this.type = type; }
     }
 
     public static class TypingRequest {

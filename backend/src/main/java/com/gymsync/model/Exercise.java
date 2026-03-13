@@ -80,14 +80,3 @@ public class Exercise {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
-
-enum ExerciseCategory {
-    STRENGTH, CARDIO, FLEXIBILITY, BALANCE, PLYOMETRIC
-}
-
-public enum MuscleGroup {
-    CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, FOREARMS,
-    ABS, OBLIQUES, LOWER_BACK,
-    QUADRICEPS, HAMSTRINGS, GLUTES, CALVES, ADDUCTORS, ABDUCTORS,
-    FULL_BODY, CARDIO
-}
