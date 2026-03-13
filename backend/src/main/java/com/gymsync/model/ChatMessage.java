@@ -62,6 +62,6 @@ public class ChatMessage {
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }
 
-public enum MessageType {
+enum MessageType {
     CHAT, JOIN, LEAVE, TYPING;
 }

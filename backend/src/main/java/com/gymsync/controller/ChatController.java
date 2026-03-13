@@ -122,14 +122,14 @@ public class ChatController {
     public static class ChatMessageRequest {
         private String receiverUsername;
         private String content;
-        private ChatMessage.MessageType type;
+        private com.gymsync.model.MessageType type;
 
         public String getReceiverUsername() { return receiverUsername; }
         public void setReceiverUsername(String receiverUsername) { this.receiverUsername = receiverUsername; }
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
-        public ChatMessage.MessageType getType() { return type; }
-        public void setType(ChatMessage.MessageType type) { this.type = type; }
+        public com.gymsync.model.MessageType getType() { return type; }
+        public void setType(com.gymsync.model.MessageType type) { this.type = type; }
     }
 
     public static class TypingRequest {
