@@ -1,6 +1,7 @@
 package com.gymsync.controller;
 
 import com.gymsync.model.*;
+import com.gymsync.repository.UserRepository;
 import com.gymsync.service.WorkoutService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,15 +16,23 @@ import java.util.Map;
 public class WorkoutController {
 
     private final WorkoutService workoutService;
+    private final UserRepository userRepository;
 
-    public WorkoutController(WorkoutService workoutService) {
+    public WorkoutController(WorkoutService workoutService, UserRepository userRepository) {
         this.workoutService = workoutService;
+        this.userRepository = userRepository;
+    }
+
+    private Long getUserIdFromPrincipal(Principal principal) {
+        String username = principal != null ? principal.getName() : "anonymous";
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
     }
 
     @GetMapping
     public ResponseEntity<List<WorkoutLog>> getMyWorkouts(Principal principal) {
-        // TODO: Get userId from principal
-        Long userId = 1L; // Placeholder
+        Long userId = getUserIdFromPrincipal(principal);
         return ResponseEntity.ok(workoutService.getUserWorkouts(userId));
     }
 
@@ -36,7 +45,7 @@ public class WorkoutController {
     public ResponseEntity<WorkoutLog> createWorkout(
             @RequestBody WorkoutLog workoutLog,
             Principal principal) {
-        Long userId = 1L; // Placeholder
+        Long userId = getUserIdFromPrincipal(principal);
         return ResponseEntity.ok(workoutService.createWorkout(userId, workoutLog));
     }
 
@@ -63,7 +72,7 @@ public class WorkoutController {
 
     @GetMapping("/exercises")
     public ResponseEntity<List<Exercise>> getExercises(Principal principal) {
-        Long userId = 1L; // Placeholder
+        Long userId = getUserIdFromPrincipal(principal);
         return ResponseEntity.ok(workoutService.getAllExercises(userId));
     }
 
@@ -76,13 +85,13 @@ public class WorkoutController {
     public ResponseEntity<Exercise> createCustomExercise(
             @RequestBody Exercise exercise,
             Principal principal) {
-        Long userId = 1L; // Placeholder
+        Long userId = getUserIdFromPrincipal(principal);
         return ResponseEntity.ok(workoutService.createCustomExercise(userId, exercise));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats(Principal principal) {
-        Long userId = 1L; // Placeholder
+        Long userId = getUserIdFromPrincipal(principal);
         return ResponseEntity.ok(workoutService.getWorkoutStats(userId));
     }
 

@@ -12,6 +12,8 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -101,6 +103,16 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return Map.of("count", chatMessageRepository.countUnreadMessages(user));
+    }
+
+    @PostMapping("/send")
+    public void sendMessageRest(@RequestBody ChatMessageRequest request, Principal principal) {
+        sendMessage(request, principal);
+    }
+
+    @PostMapping("/typing")
+    public void sendTypingNotificationRest(@RequestBody TypingRequest request, Principal principal) {
+        sendTypingNotification(request, principal);
     }
 
     @GetMapping("/partners")
