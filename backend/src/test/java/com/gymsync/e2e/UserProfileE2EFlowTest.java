@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Transactional
 @Import(TestSecurityConfig.class)
+@WithMockUser(username = "johndoe")
 class UserProfileE2EFlowTest {
 
     @Autowired
