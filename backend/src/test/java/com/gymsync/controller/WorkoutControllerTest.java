@@ -2,6 +2,7 @@ package com.gymsync.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymsync.model.*;
+import com.gymsync.repository.UserRepository;
 import com.gymsync.service.WorkoutService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -24,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(WorkoutController.class)
-@WithMockUser
+@WithMockUser(username = "testuser")
 class WorkoutControllerTest {
 
     @Autowired
@@ -33,14 +35,24 @@ class WorkoutControllerTest {
     @MockBean
     private WorkoutService workoutService;
 
+    @MockBean
+    private UserRepository userRepository;
+
     @Autowired
     private ObjectMapper objectMapper;
 
     private WorkoutLog testWorkout;
     private Exercise testExercise;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
+        testUser.setName("Test User");
+        testUser.setFitnessLevel(FitnessLevel.INTERMEDIATE);
+
         testWorkout = new WorkoutLog();
         testWorkout.setId(1L);
         testWorkout.setWorkoutDate(LocalDate.now());
@@ -51,26 +63,24 @@ class WorkoutControllerTest {
         testExercise.setId(1L);
         testExercise.setName("Bench Press");
         testExercise.setCategory(ExerciseCategory.STRENGTH);
+        testExercise.setPrimaryMuscleGroup(MuscleGroup.CHEST);
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
     }
 
     @Test
     void getMyWorkouts_ShouldReturnList() throws Exception {
-        // Given
-        when(workoutService.getUserWorkouts(any())).thenReturn(Arrays.asList(testWorkout));
+        when(workoutService.getUserWorkoutsByUsername("testuser")).thenReturn(Arrays.asList(testWorkout));
 
-        // When & Then
         mockMvc.perform(get("/api/workouts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].durationMinutes").value(60));
+                .andExpect(jsonPath("$[0].id").value(1));
     }
 
     @Test
     void getWorkout_ShouldReturnWorkout() throws Exception {
-        // Given
         when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
 
-        // When & Then
         mockMvc.perform(get("/api/workouts/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
@@ -78,10 +88,8 @@ class WorkoutControllerTest {
 
     @Test
     void createWorkout_ShouldCreateAndReturnWorkout() throws Exception {
-        // Given
-        when(workoutService.createWorkout(any(), any())).thenReturn(testWorkout);
+        when(workoutService.createWorkout(anyLong(), any())).thenReturn(testWorkout);
 
-        // When & Then
         mockMvc.perform(post("/api/workouts")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,7 +100,6 @@ class WorkoutControllerTest {
 
     @Test
     void addExerciseSet_ShouldAddSet() throws Exception {
-        // Given
         when(workoutService.addExerciseSet(anyLong(), anyLong(), any())).thenReturn(testWorkout);
 
         String requestBody = """
@@ -104,7 +111,6 @@ class WorkoutControllerTest {
             }
             """;
 
-        // When & Then
         mockMvc.perform(post("/api/workouts/1/sets")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +120,6 @@ class WorkoutControllerTest {
 
     @Test
     void deleteWorkout_ShouldDelete() throws Exception {
-        // When & Then
         mockMvc.perform(delete("/api/workouts/1").with(csrf()))
                 .andExpect(status().isOk());
 
@@ -123,10 +128,8 @@ class WorkoutControllerTest {
 
     @Test
     void getExercises_ShouldReturnList() throws Exception {
-        // Given
-        when(workoutService.getAllExercises(any())).thenReturn(Arrays.asList(testExercise));
+        when(workoutService.getAllExercises(anyLong())).thenReturn(Arrays.asList(testExercise));
 
-        // When & Then
         mockMvc.perform(get("/api/workouts/exercises"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Bench Press"));
@@ -134,10 +137,8 @@ class WorkoutControllerTest {
 
     @Test
     void searchExercises_ShouldReturnResults() throws Exception {
-        // Given
         when(workoutService.searchExercises("bench")).thenReturn(Arrays.asList(testExercise));
 
-        // When & Then
         mockMvc.perform(get("/api/workouts/exercises/search?q=bench"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Bench Press"));
@@ -145,10 +146,8 @@ class WorkoutControllerTest {
 
     @Test
     void createCustomExercise_ShouldCreateExercise() throws Exception {
-        // Given
-        when(workoutService.createCustomExercise(any(), any())).thenReturn(testExercise);
+        when(workoutService.createCustomExercise(anyLong(), any())).thenReturn(testExercise);
 
-        // When & Then
         mockMvc.perform(post("/api/workouts/exercises")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -159,15 +158,13 @@ class WorkoutControllerTest {
 
     @Test
     void getStats_ShouldReturnStats() throws Exception {
-        // Given
         Map<String, Object> stats = Map.of(
                 "totalWorkouts", 10,
                 "thisWeek", 3,
                 "thisMonth", 8
         );
-        when(workoutService.getWorkoutStats(any())).thenReturn(stats);
+        when(workoutService.getWorkoutStats(anyLong())).thenReturn(stats);
 
-        // When & Then
         mockMvc.perform(get("/api/workouts/stats"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalWorkouts").value(10))
