@@ -27,7 +27,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.receiver = :user AND m.read = false")
     long countUnreadMessages(@Param("user") User user);
 
-    @Query("SELECT DISTINCT CASE WHEN m.sender = :user THEN m.receiver ELSE m.sender END " +
-           "FROM ChatMessage m WHERE m.sender = :user OR m.receiver = :user")
+    @Query("SELECT DISTINCT u FROM User u WHERE u IN (SELECT m.receiver FROM ChatMessage m WHERE m.sender = :user) OR u IN (SELECT m.sender FROM ChatMessage m WHERE m.receiver = :user)")
     List<User> findChatPartners(@Param("user") User user);
 }
