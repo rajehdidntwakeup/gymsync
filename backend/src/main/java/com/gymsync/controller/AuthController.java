@@ -24,6 +24,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
+        if (user.getUsername() == null || user.getEmail() == null || user.getPassword() == null) {
+            return ResponseEntity.badRequest().body("Missing required fields: username, email, or password");
+        }
         if (userRepository.existsByUsername(user.getUsername())) {
             return ResponseEntity.badRequest().body("Username already taken");
         }
