@@ -13,21 +13,6 @@ jobs:
       run:
         working-directory: backend
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: gymsync_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
       
@@ -38,12 +23,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
           
-      - name: Build with Maven
-        run: mvn clean test package -DskipTests=false
+      - name: Build with Maven (H2 Database)
+        run: mvn clean test package -Dspring.profiles.active=test
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gymsync_test
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: password
+          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
