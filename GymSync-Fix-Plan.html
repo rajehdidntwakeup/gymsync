@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymSync Fix Plan</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-hover: #334155;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --accent: #22c55e;
+            --accent-glow: rgba(34, 197, 94, 0.15);
+            --critical: #ef4444;
+            --critical-bg: rgba(239, 68, 68, 0.1);
+            --critical-border: #7f1d1d;
+            --high: #f97316;
+            --high-bg: rgba(249, 115, 22, 0.1);
+            --high-border: #7c2d12;
+            --medium: #eab308;
+            --medium-bg: rgba(234, 179, 8, 0.1);
+            --medium-border: #713f12;
+            --low: #3b82f6;
+            --low-bg: rgba(59, 130, 246, 0.1);
+            --low-border: #1e3a5f;
+            --code-bg: #0d1117;
+            --code-border: #30363d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #4ade80);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Nav */
+        .nav {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            gap: 0.25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .nav a:hover, .nav a.active {
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Phase header */
+        .phase {
+            margin-bottom: 3rem;
+        }
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .phase-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .phase-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .phase-header .subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        .phase-goal {
+            background: var(--accent-glow);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        .phase-goal strong {
+            color: var(--accent);
+        }
+
+        /* Severity colors */
+        .severity-critical .phase-number { background: var(--critical-bg); color: var(--critical); border: 2px solid var(--critical); }
+        .severity-high .phase-number { background: var(--high-bg); color: var(--high); border: 2px solid var(--high); }
+        .severity-medium .phase-number { background: var(--medium-bg); color: var(--medium); border: 2px solid var(--medium); }
+        .severity-low .phase-number { background: var(--low-bg); color: var(--low); border: 2px solid var(--low); }
+
+        /* Step card */
+        .step {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+        .step:hover {
+            border-color: #475569;
+        }
+        .step-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .step-id {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--accent-glow);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        .step-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .step-header .file-tag {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            flex-shrink: 0;
+        }
+
+        .step p {
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .step p strong {
+            color: var(--text);
+        }
+
+        /* Code blocks */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+        .inline-code {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #7dd3fc;
+        }
+
+        /* Lists */
+        .step ul {
+            margin: 0.5rem 0 0.75rem 1.5rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+        .step ul li {
+            margin-bottom: 0.3rem;
+        }
+        .step ul li::marker {
+            color: var(--accent);
+        }
+
+        /* File change tag */
+        .change-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .tag-new { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .tag-modify { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-remove { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .tag-fix { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+
+        /* Before/After diff */
+        .diff {
+            margin: 0.75rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--code-border);
+        }
+        .diff-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.4rem 0.75rem;
+            font-family: 'SF Mono', monospace;
+        }
+        .diff-before .diff-label { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .diff-after .diff-label { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .diff pre {
+            margin: 0;
+            border: none;
+            border-radius: 0;
+        }
+
+        /* Summary table */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+        .summary-card .number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        .summary-card .label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Table */
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        .file-table th {
+            background: var(--code-bg);
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .file-table td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .file-table tr:hover td {
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.75rem; }
+            .step-header { flex-wrap: wrap; }
+            .step-header .file-tag { margin-left: 0; }
+            .container { padding: 1rem; }
+            .phase-header { flex-wrap: wrap; }
+        }
+
+        /* Scroll-to-top button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scroll-top.visible { opacity: 1; }
+        .scroll-top:hover { background: #4ade80; }
+
+        /* Progress bar */
+        .progress-bar {
+            background: var(--border);
+            height: 4px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 200;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+<div class="hero">
+    <h1>GymSync Fix Plan</h1>
+    <p>A step-by-step guide to fixing every issue, organized into 6 phases by priority. Each phase builds on the previous one.</p>
+</div>
+
+<nav class="nav" id="nav">
+    <a href="#phase-1">Phase 1: Auth &amp; Security</a>
+    <a href="#phase-2">Phase 2: Backend Stubs</a>
+    <a href="#phase-3">Phase 3: Mobile Fixes</a>
+    <a href="#phase-4">Phase 4: Backend Polish</a>
+    <a href="#phase-5">Phase 5: Mobile Polish</a>
+    <a href="#phase-6">Phase 6: Infra &amp; CI</a>
+    <a href="#summary">Summary</a>
+</nav>
+
+<div class="container">
+
+    <!-- Stats -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="number" style="color: var(--critical)">5</div>
+            <div class="label">Critical Bugs</div>
+        </div>
+        <div class="summary-card">
+            <div class="number" style="color: var(--high)">12</div>
+            <div class="label">High Issues</div>
+        </div>
+        <div class="summary-card">
+            <div class="number" style="color: var(--medium)">10</div>
+            <div class="label">Medium Issues</div>
+        </div>
+        <div class="summary-card">
+            <div class="number" style="color: var(--low)">8</div>
+            <div class="label">Low Issues</div>
+        </div>
+        <div class="summary-card">
+            <div class="number" style="color: var(--accent)">35</div>
+            <div class="label">Total Steps</div>
+        </div>
+        <div class="summary-card">
+            <div class="number" style="color: var(--text)">~45</div>
+            <div class="label">File Edits</div>
+        </div>
+    </div>
+
+    <!-- ===================== PHASE 1 ===================== -->
+    <section class="phase severity-critical" id="phase-1">
+        <div class="phase-header">
+            <div class="phase-number">1</div>
+            <div>
+                <h2>Critical: Authentication &amp; Security</h2>
+                <div class="subtitle">Make login work end-to-end and stop leaking passwords</div>
+            </div>
+        </div>
+        <div class="phase-goal">
+            <strong>Goal:</strong> The entire auth system is non-functional — login returns a placeholder string, no JWT filter exists, and password hashes leak in API responses. This phase fixes all of that.
+        </div>
+
+        <!-- Step 1.1 -->
+        <div class="step" id="step-1-1">
+            <div class="step-header">
+                <span class="step-id">1.1</span>
+                <h3>Create JWT Utility Class</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> security/JwtUtil.java</span>
+            </div>
+            <p>Create a utility class that handles JWT token creation and validation using the already-declared <code>jjwt</code> dependency.</p>
+            <ul>
+                <li><code>generateToken(UserDetails)</code> — uses <code>gymsync.jwt.secret</code> and <code>gymsync.jwt.expiration</code> from application.properties</li>
+                <li><code>extractUsername(String token)</code> — extracts the subject claim</li>
+                <li><code>extractUserId(String token)</code> — extracts the custom <code>userId</code> claim</li>
+                <li><code>isTokenValid(String token, UserDetails)</code> — checks username match and expiration</li>
+                <li><code>extractAllClaims(String token)</code> — private helper using <code>Jwts.parserBuilder()</code></li>
+            </ul>
+        </div>
+
+        <!-- Step 1.2 -->
+        <div class="step" id="step-1-2">
+            <div class="step-header">
+                <span class="step-id">1.2</span>
+                <h3>Make User Implement UserDetails + @JsonIgnore Password</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> model/User.java</span>
+            </div>
+            <p>Add <code>implements UserDetails</code> to the User entity. This is needed for Spring Security authentication.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>public class User {
+    // ...
+    @NotBlank @Size(max=120)
+    private String password;
+
+    public String getPassword() { return password; }</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>public class User implements UserDetails {
+    // ...
+    @NotBlank @Size(max=120)
+    private String password;
+
+    @JsonIgnore
+    public String getPassword() { return password; }
+
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonLocked() { return true; }
+    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isEnabled() { return true; }</code></pre></div>
+            </div>
+            <p><strong>Why:</strong> This fixes the <span style="color:var(--critical)">critical password leak bug</span> — without <code>@JsonIgnore</code>, the BCrypt hash is returned in every API response that includes a User object.</p>
+        </div>
+
+        <!-- Step 1.3 -->
+        <div class="step" id="step-1-3">
+            <div class="step-header">
+                <span class="step-id">1.3</span>
+                <h3>Create Custom UserDetailsService</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> security/CustomUserDetailsService.java</span>
+            </div>
+            <p>Spring Security needs a way to load users from the database. This service bridges our <code>UserRepository</code> and Spring Security's <code>UserDetailsService</code> interface.</p>
+            <pre><code>@Service
+public class CustomUserDetailsService implements UserDetailsService {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+}</code></pre>
+        </div>
+
+        <!-- Step 1.4 -->
+        <div class="step" id="step-1-4">
+            <div class="step-header">
+                <span class="step-id">1.4</span>
+                <h3>Create JWT Authentication Filter</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> security/JwtAuthenticationFilter.java</span>
+            </div>
+            <p>Create a filter that runs before Spring Security's default filter. It extracts the JWT from the <code>Authorization: Bearer ...</code> header, validates it, and sets the security context.</p>
+            <ul>
+                <li>If header is present and valid → set <code>SecurityContextHolder</code> authentication</li>
+                <li>If header is missing → continue (allows <code>permitAll</code> endpoints through)</li>
+                <li>If token is expired/malformed → clear context, continue (secured endpoints will return 401)</li>
+            </ul>
+        </div>
+
+        <!-- Step 1.5 -->
+        <div class="step" id="step-1-5">
+            <div class="step-header">
+                <span class="step-id">1.5</span>
+                <h3>Wire JWT Filter into SecurityConfig</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> config/SecurityConfig.java</span>
+            </div>
+            <p>Inject <code>JwtAuthenticationFilter</code> and <code>CustomUserDetailsService</code>. Add the filter before <code>UsernamePasswordAuthenticationFilter</code>.</p>
+            <pre><code>http
+    .csrf(AbstractHttpConfigurer::disable)
+    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/api/auth/**").permitAll()
+        .requestMatchers("/api/gyms").permitAll()
+        .requestMatchers("/api/workouts/exercises").permitAll()
+        .requestMatchers("/ws/**").permitAll()
+        .anyRequest().authenticated()
+    )
+    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);</code></pre>
+        </div>
+
+        <!-- Step 1.6 -->
+        <div class="step" id="step-1-6">
+            <div class="step-header">
+                <span class="step-id">1.6</span>
+                <h3>Implement Login Endpoint (Replace Stub)</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> controller/AuthController.java</span>
+            </div>
+            <p>Replace the placeholder string with real JWT token generation.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>@PostMapping("/login")
+public ResponseEntity&lt;String&gt; login(@RequestBody LoginRequest request) {
+    // TODO: Implement JWT token generation
+    return ResponseEntity.ok("Login endpoint - JWT implementation pending");
+}</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>@PostMapping("/login")
+public ResponseEntity&lt;?&gt; login(@RequestBody LoginRequest request) {
+    Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(
+            request.getUsername(), request.getPassword()
+        )
+    );
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    String token = jwtUtil.generateToken(userDetails);
+    User user = userRepository.findByUsername(userDetails.getUsername())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+    return ResponseEntity.ok(Map.of(
+        "token", token, "type", "Bearer",
+        "userId", user.getId(), "username", user.getUsername()
+    ));
+}</code></pre></div>
+            </div>
+            <p>Also: inject <code>AuthenticationManager</code> and <code>JwtUtil</code>, and make <code>LoginRequest</code> public.</p>
+        </div>
+
+        <!-- Step 1.7 -->
+        <div class="step" id="step-1-7">
+            <div class="step-header">
+                <span class="step-id">1.7</span>
+                <h3>Create Global CORS &amp; Error Handling</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> config/CorsConfig.java &nbsp; <span class="change-tag tag-new">NEW</span> exception/GlobalExceptionHandler.java</span>
+            </div>
+            <p>Replace per-controller <code>@CrossOrigin(origins = "*")</code> with a centralized CORS configuration that restricts origins to known development URLs.</p>
+            <p>Create a <code>@RestControllerAdvice</code> that catches <code>RuntimeException</code>, <code>MethodArgumentNotValidException</code>, and <code>UsernameNotFoundException</code> — returning structured JSON error responses instead of stack traces.</p>
+            <p>Then <strong>remove</strong> <code>@CrossOrigin(origins = "*")</code> from all four controllers: AuthController, UserController, WorkoutController, ChatController.</p>
+        </div>
+
+        <!-- Step 1.8 -->
+        <div class="step" id="step-1-8">
+            <div class="step-header">
+                <span class="step-id">1.8</span>
+                <h3>Fix Mobile Auth Flow</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> AuthContext.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p><span style="color:var(--critical)">This is the #1 blocking bug.</span> After login, <code>user</code> is never set, so the app always shows the login screen.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>const login = async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    await AsyncStorage.setItem('token', response.data.token);
+    // TODO: Set user from response
+};</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>const login = async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    await AsyncStorage.setItem('token', response.data.token);
+    const userResponse = await api.get('/users/me');
+    setUser(userResponse.data);
+};
+
+const checkAuth = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+        const response = await api.get('/users/me');
+        setUser(response.data);
+    }
+};</code></pre></div>
+            </div>
+        </div>
+
+        <!-- Step 1.9 -->
+        <div class="step" id="step-1-9">
+            <div class="step-header">
+                <span class="step-id">1.9</span>
+                <h3>Fix 401 Interceptor Navigation</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> api.ts (mobile + mobile-expo) &nbsp; <span class="change-tag tag-modify">MODIFY</span> App.tsx</span>
+            </div>
+            <p>When the 401 interceptor fires, it clears the token but doesn't redirect to login. Add a callback mechanism:</p>
+            <pre><code>// In api.ts:
+let onUnauthorizedCallback: (() =&gt; void) | null = null;
+export const setOnUnauthorized = (cb: () =&gt; void) =&gt; { onUnauthorizedCallback = cb; };
+
+// In the 401 handler:
+if (error.response?.status === 401) {
+    await AsyncStorage.removeItem('token');
+    onUnauthorizedCallback?.();  // triggers navigation reset
+}
+
+// In App.tsx — register the callback:
+React.useEffect(() =&gt; {
+    setOnUnauthorized(() =&gt; {
+        navigationRef.reset({ index: 0, routes: [{ name: 'Login' }] });
+    });
+}, []);</code></pre>
+        </div>
+    </section>
+
+    <!-- ===================== PHASE 2 ===================== -->
+    <section class="phase severity-high" id="phase-2">
+        <div class="phase-header">
+            <div class="phase-number">2</div>
+            <div>
+                <h2>High: Backend Stubs &amp; Data Integrity</h2>
+                <div class="subtitle">Replace all hardcoded/fake data with real database queries</div>
+            </div>
+        </div>
+        <div class="phase-goal">
+            <strong>Goal:</strong> UserController returns fake data, workout ownership is unchecked, and the Gym model has no controller. This phase replaces all stubs with real implementations.
+        </div>
+
+        <!-- Step 2.1 -->
+        <div class="step" id="step-2-1">
+            <div class="step-header">
+                <span class="step-id">2.1</span>
+                <h3>Create UserService</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> service/UserService.java</span>
+            </div>
+            <ul>
+                <li><code>getUserProfile(username)</code> — find by username, throw if not found</li>
+                <li><code>updateUserProfile(username, updates)</code> — update name, email, fitnessLevel, gymLocation, workoutGoals (NOT username, password, id)</li>
+                <li><code>setSchedule(userId, schedule)</code> — replace availableSlots</li>
+                <li><code>getSchedule(userId)</code> — return availableSlots</li>
+                <li><code>findBuddies(gymLocation, fitnessLevel)</code> — query by location and level, exclude requesting user</li>
+            </ul>
+        </div>
+
+        <!-- Step 2.2 -->
+        <div class="step" id="step-2-2">
+            <div class="step-header">
+                <span class="step-id">2.2</span>
+                <h3>Add Missing Repository Methods</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> UserRepository.java</span>
+            </div>
+            <pre><code>List&lt;User&gt; findByGymLocationAndFitnessLevel(String gymLocation, FitnessLevel fitnessLevel);
+List&lt;User&gt; findByGymLocation(String gymLocation);</code></pre>
+        </div>
+
+        <!-- Step 2.3 -->
+        <div class="step" id="step-2-3">
+            <div class="step-header">
+                <span class="step-id">2.3</span>
+                <h3>Rewrite UserController with Real Data</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> controller/UserController.java</span>
+            </div>
+            <p>Replace all stub methods with calls to <code>UserService</code>. Inject the service.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>@GetMapping("/me")
+public ResponseEntity&lt;?&gt; getMyProfile(Principal principal) {
+    String username = getUsername(principal);
+    return ResponseEntity.ok(Map.of(
+        "username", username,
+        "name", "Test User",
+        "fitnessLevel", "INTERMEDIATE"
+    ));
+}</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>@GetMapping("/me")
+public ResponseEntity&lt;?&gt; getMyProfile(Principal principal) {
+    User user = userService.getUserProfile(principal.getName());
+    return ResponseEntity.ok(user);
+}</code></pre></div>
+            </div>
+        </div>
+
+        <!-- Step 2.4 -->
+        <div class="step" id="step-2-4">
+            <div class="step-header">
+                <span class="step-id">2.4</span>
+                <h3>Fix findByIdWithExerciseSets NPE</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> WorkoutLogRepository.java &nbsp; <span class="change-tag tag-fix">FIX</span> WorkoutService.java</span>
+            </div>
+            <p>The repository returns <code>null</code> instead of <code>Optional</code> when ID is not found, causing a NullPointerException downstream.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE (Repository)</div><pre><code>WorkoutLog findByIdWithExerciseSets(@Param("id") Long id);</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER (Repository)</div><pre><code>Optional&lt;WorkoutLog&gt; findByIdWithExerciseSets(@Param("id") Long id);</code></pre></div>
+            </div>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE (Service)</div><pre><code>return workoutLogRepository.findByIdWithExerciseSets(workoutId);</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER (Service)</div><pre><code>return workoutLogRepository.findByIdWithExerciseSets(workoutId)
+    .orElseThrow(() -&gt; new RuntimeException("Workout not found with id: " + workoutId));</code></pre></div>
+            </div>
+        </div>
+
+        <!-- Step 2.5 -->
+        <div class="step" id="step-2-5">
+            <div class="step-header">
+                <span class="step-id">2.5</span>
+                <h3>Add Ownership Checks to WorkoutController</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> controller/WorkoutController.java</span>
+            </div>
+            <p>Add a private method that verifies the requesting user owns the workout. Call it in <code>getWorkout</code>, <code>deleteWorkout</code>, and <code>addExerciseSet</code>.</p>
+            <pre><code>private void verifyOwnership(WorkoutLog workout, String username) {
+    if (!workout.getUser().getUsername().equals(username)) {
+        throw new RuntimeException("You can only access your own workouts");
+    }
+}</code></pre>
+        </div>
+
+        <!-- Step 2.6 -->
+        <div class="step" id="step-2-6">
+            <div class="step-header">
+                <span class="step-id">2.6</span>
+                <h3>Add @Valid to All @RequestBody Parameters</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> AuthController, WorkoutController, ChatController</span>
+            </div>
+            <p>The entity classes already have Bean Validation annotations (<code>@NotBlank</code>, <code>@Size</code>, <code>@Email</code>), but they are never triggered because <code>@Valid</code> is missing on <code>@RequestBody</code> parameters.</p>
+            <pre><code>// BEFORE:
+public ResponseEntity&lt;?&gt; register(@RequestBody User user)
+
+// AFTER:
+public ResponseEntity&lt;?&gt; register(@RequestBody @Valid User user)</code></pre>
+            <p>Apply to all <code>@RequestBody</code> parameters in <code>AuthController</code>, <code>WorkoutController</code>, and <code>ChatController</code>.</p>
+        </div>
+
+        <!-- Step 2.7 -->
+        <div class="step" id="step-2-7">
+            <div class="step-header">
+                <span class="step-id">2.7</span>
+                <h3>Create DTO Layer (Prevent Password Leak — Part 2)</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> dto/UserProfileResponse.java &nbsp; <span class="change-tag tag-new">NEW</span> dto/UserUpdateRequest.java</span>
+            </div>
+            <p>While <code>@JsonIgnore</code> on <code>User.password</code> (Step 1.2) is the quick fix, proper DTOs are the long-term solution. Create response DTOs that exclude the password field entirely, and request DTOs that don't accept <code>id</code> or <code>username</code>.</p>
+            <p>Update <code>UserController</code> and <code>ChatController</code> to return <code>UserProfileResponse</code> instead of raw <code>User</code> entities.</p>
+        </div>
+
+        <!-- Step 2.8 -->
+        <div class="step" id="step-2-8">
+            <div class="step-header">
+                <span class="step-id">2.8</span>
+                <h3>Create GymController</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> controller/GymController.java</span>
+            </div>
+            <p>The <code>Gym</code> entity and <code>GymRepository</code> exist, and <code>SecurityConfig</code> permits <code>/api/gyms</code>, but there is no controller.</p>
+            <pre><code>@RestController
+@RequestMapping("/api/gyms")
+public class GymController {
+    @Autowired private GymRepository gymRepository;
+
+    @GetMapping           → findAll()
+    @GetMapping("/search")  → findByCityContainingIgnoreCase(city)
+    @GetMapping("/student-discount") → findByHasStudentDiscountTrue()
+    @GetMapping("/{id}")    → findById(id)
+}</code></pre>
+        </div>
+    </section>
+
+    <!-- ===================== PHASE 3 ===================== -->
+    <section class="phase severity-high" id="phase-3">
+        <div class="phase-header">
+            <div class="phase-number">3</div>
+            <div>
+                <h2>High: Mobile App Fixes</h2>
+                <div class="subtitle">Make the mobile app functional with the real backend</div>
+            </div>
+        </div>
+        <div class="phase-goal">
+            <strong>Goal:</strong> Fix type mismatches, missing screens, WebSocket leaks, and error handling so the app works end-to-end.
+        </div>
+
+        <div class="step" id="step-3-1">
+            <div class="step-header">
+                <span class="step-id">3.1</span>
+                <h3>Fix WorkoutLog &amp; Exercise Type Mismatches</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> types/index.ts (mobile + mobile-expo)</span>
+            </div>
+            <p>The frontend <code>WorkoutLog</code> and <code>Exercise</code> interfaces have completely different fields than the backend models. This causes silent data loss.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>export interface WorkoutLog {
+  id: number;
+  exerciseId: number;       // wrong
+  exerciseName: string;     // wrong
+  sets: WorkoutSet[];       // wrong
+  date: string;             // wrong
+}</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>export interface WorkoutLog {
+  id: number;
+  workoutDate: string;
+  notes: string | null;
+  durationMinutes: number | null;
+  caloriesBurned: number | null;
+  rating: number | null;
+  exerciseSets: ExerciseSet[];
+  createdAt: string;
+}</code></pre></div>
+            </div>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE (Exercise)</div><pre><code>export interface Exercise {
+  id: number;
+  name: string;
+  category: string;
+  muscleGroup: string;  // wrong field name
+}</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER (Exercise)</div><pre><code>export interface Exercise {
+  id: number;
+  name: string;
+  category: string;
+  primaryMuscleGroup: string;
+  secondaryMuscleGroup?: string;
+  description?: string;
+  isCustom: boolean;
+}</code></pre></div>
+            </div>
+        </div>
+
+        <div class="step" id="step-3-2">
+            <div class="step-header">
+                <span class="step-id">3.2</span>
+                <h3>Add WorkoutDetail Screen</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> WorkoutDetailScreen.tsx &nbsp; <span class="change-tag tag-modify">MODIFY</span> App.tsx</span>
+            </div>
+            <p><span style="color:var(--high)">Navigation crash bug.</span> <code>WorkoutsScreen</code> navigates to <code>'WorkoutDetail'</code> but no such screen is registered in the Stack.Navigator. Create the screen and register it.</p>
+        </div>
+
+        <div class="step" id="step-3-3">
+            <div class="step-header">
+                <span class="step-id">3.3</span>
+                <h3>Fix ChatScreen WebSocket Connection Leak</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> ChatScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Switching chat partners creates a new WebSocket connection without closing the previous one, leading to connection leaks and duplicate message handlers.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>useEffect(() => {
+  if (selectedPartner) {
+    connectSocket();
+    loadHistory();
+  }
+}, [selectedPartner]);</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>useEffect(() => {
+  if (selectedPartner) {
+    chatSocket.disconnect();  // close previous connection
+    connectSocket();
+    loadHistory();
+  }
+  return () => { chatSocket.disconnect(); };
+}, [selectedPartner]);</code></pre></div>
+            </div>
+        </div>
+
+        <div class="step" id="step-3-4">
+            <div class="step-header">
+                <span class="step-id">3.4</span>
+                <h3>Add Error Display to All Screens</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> LoginScreen, RegisterScreen, WorkoutsScreen, ChatScreen</span>
+            </div>
+            <p>Every screen currently catches errors with <code>console.error</code> only — the user sees nothing. Add an <code>error</code> state and display it above the form/buttons.</p>
+            <pre><code>// Add to each screen:
+const [error, setError] = useState('');
+
+// In catch blocks:
+catch (err) { setError('Something went wrong. Please try again.'); }
+
+// In JSX:
+{error ? &lt;Text style={styles.error}&gt;{error}&lt;/Text&gt; : null}</code></pre>
+        </div>
+
+        <div class="step" id="step-3-5">
+            <div class="step-header">
+                <span class="step-id">3.5</span>
+                <h3>Add Form Validation to Login &amp; Register</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> LoginScreen.tsx, RegisterScreen.tsx</span>
+            </div>
+            <ul>
+                <li><strong>Login:</strong> Require non-empty username and password before calling API</li>
+                <li><strong>Register:</strong> Require name, username, valid email (<code>@</code> present), password ≥ 6 chars</li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-3-6">
+            <div class="step-header">
+                <span class="step-id">3.6</span>
+                <h3>Add Fitness Level Picker to Register</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> RegisterScreen.tsx</span>
+            </div>
+            <p>Currently hardcoded to <code>"BEGINNER"</code>. Replace with a <code>Picker</code> component offering BEGINNER, INTERMEDIATE, ADVANCED.</p>
+        </div>
+
+        <div class="step" id="step-3-7">
+            <div class="step-header">
+                <span class="step-id">3.7</span>
+                <h3>Build Profile Screen</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> ProfileScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Currently shows only a "Logout" button. Display real user data from <code>useAuth().user</code>: name, username, email, fitness level, gym location, workout goals.</p>
+        </div>
+
+        <div class="step" id="step-3-8">
+            <div class="step-header">
+                <span class="step-id">3.8</span>
+                <h3>Build Gyms Screen with Real Data</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> GymsScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Currently a placeholder "Map view coming soon." Fetch gyms from <code>GET /api/gyms</code> and display as a list with search by city, student discount badge.</p>
+        </div>
+
+        <div class="step" id="step-3-9">
+            <div class="step-header">
+                <span class="step-id">3.9</span>
+                <h3>Build Exercise Picker for LogWorkout</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> LogWorkoutScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Currently hardcoded to "Bench Press" (exerciseId: 1). Replace the TODO with a Modal that fetches exercises from <code>GET /api/workouts/exercises</code> and lets the user search and pick.</p>
+        </div>
+
+        <div class="step" id="step-3-10">
+            <div class="step-header">
+                <span class="step-id">3.10</span>
+                <h3>Fix ExerciseSet Default Value</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> model/ExerciseSet.java</span>
+            </div>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>private Boolean completed = true;</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>private Boolean completed = false;</code></pre></div>
+            </div>
+            <p>A newly created exercise set should not be marked as completed by default.</p>
+        </div>
+    </section>
+
+    <!-- ===================== PHASE 4 ===================== -->
+    <section class="phase severity-medium" id="phase-4">
+        <div class="phase-header">
+            <div class="phase-number">4</div>
+            <div>
+                <h2>Medium: Backend Improvements</h2>
+                <div class="subtitle">Improve reliability, validation, and API quality</div>
+            </div>
+        </div>
+        <div class="phase-goal">
+            <strong>Goal:</strong> Extract business logic into services, add missing endpoints, and clean up code quality issues.
+        </div>
+
+        <div class="step" id="step-4-1">
+            <div class="step-header">
+                <span class="step-id">4.1</span>
+                <h3>Create ChatService</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> service/ChatService.java</span>
+            </div>
+            <p>Extract business logic from <code>ChatController</code> into a service layer (same pattern as <code>WorkoutService</code>).</p>
+            <ul>
+                <li><code>getConversation(user1, user2)</code></li>
+                <li><code>sendMessage(senderUsername, receiverUsername, content)</code></li>
+                <li><code>markAsRead(messageId, username)</code></li>
+                <li><code>getUnreadCount(username)</code></li>
+                <li><code>getChatPartners(username)</code></li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-4-2">
+            <div class="step-header">
+                <span class="step-id">4.2</span>
+                <h3>Add Mark-as-Read Endpoint</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> ChatController.java</span>
+            </div>
+            <pre><code>@PutMapping("/messages/{messageId}/read")
+public ResponseEntity&lt;?&gt; markAsRead(@PathVariable Long messageId, Principal principal) {
+    chatService.markAsRead(messageId, principal.getName());
+    return ResponseEntity.ok().build();
+}</code></pre>
+        </div>
+
+        <div class="step" id="step-4-3">
+            <div class="step-header">
+                <span class="step-id">4.3</span>
+                <h3>Add Workout Update Endpoint</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> WorkoutController.java</span>
+            </div>
+            <pre><code>@PutMapping("/{id}")
+public ResponseEntity&lt;?&gt; updateWorkout(@PathVariable Long id,
+        @RequestBody @Valid WorkoutLog updates, Principal principal) {
+    WorkoutLog existing = workoutService.getWorkoutById(id);
+    verifyOwnership(existing, principal.getName());
+    existing.setNotes(updates.getNotes());
+    existing.setDurationMinutes(updates.getDurationMinutes());
+    existing.setCaloriesBurned(updates.getCaloriesBurned());
+    existing.setRating(updates.getRating());
+    return ResponseEntity.ok(workoutLogRepository.save(existing));
+}</code></pre>
+        </div>
+
+        <div class="step" id="step-4-4">
+            <div class="step-header">
+                <span class="step-id">4.4</span>
+                <h3>Remove Duplicate @Controller Annotation</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> ChatController.java</span>
+            </div>
+            <p>Remove <code>@Controller</code> — <code>@RestController</code> already includes it.</p>
+        </div>
+
+        <div class="step" id="step-4-5">
+            <div class="step-header">
+                <span class="step-id">4.5</span>
+                <h3>Add WorkoutLog Rating Validation</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> model/WorkoutLog.java</span>
+            </div>
+            <pre><code>@Min(1) @Max(5)
+private Double rating;</code></pre>
+        </div>
+
+        <div class="step" id="step-4-6">
+            <div class="step-header">
+                <span class="step-id">4.6</span>
+                <h3>Improve TimeSlot Validation</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> model/TimeSlot.java</span>
+            </div>
+            <pre><code>@Pattern(regexp = "MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY")
+private String dayOfWeek;
+
+@Pattern(regexp = "^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+private String startTime;
+
+@Pattern(regexp = "^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+private String endTime;</code></pre>
+        </div>
+
+        <div class="step" id="step-4-7">
+            <div class="step-header">
+                <span class="step-id">4.7</span>
+                <h3>Fix getWorkoutStats Performance</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> WorkoutService.java &nbsp; <span class="change-tag tag-modify">MODIFY</span> WorkoutLogRepository.java</span>
+            </div>
+            <p>Replace loading all workouts into memory with a COUNT query. Add <code>long countByUser(User user)</code> to <code>WorkoutLogRepository</code> and update <code>getWorkoutStats</code> to use it.</p>
+        </div>
+
+        <div class="step" id="step-4-8">
+            <div class="step-header">
+                <span class="step-id">4.8</span>
+                <h3>Remove Duplicate Dependencies</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> pom.xml &nbsp; <span class="change-tag tag-fix">FIX</span> mobile/package.json</span>
+            </div>
+            <ul>
+                <li>Remove duplicate <code>assertj-core</code> entry in <code>pom.xml</code></li>
+                <li>Remove duplicate <code>@stomp/stompjs</code>, <code>sockjs-client</code>, and <code>text-encoding</code> in <code>mobile/package.json</code></li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-4-9">
+            <div class="step-header">
+                <span class="step-id">4.9</span>
+                <h3>Remove Hardcoded "testuser" Fallback</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> WorkoutController.java</span>
+            </div>
+            <p>Replace all <code>principal != null ? principal.getName() : "testuser"</code> with just <code>principal.getName()</code>. With JWT auth working, the principal should always be present for secured endpoints.</p>
+        </div>
+    </section>
+
+    <!-- ===================== PHASE 5 ===================== -->
+    <section class="phase severity-medium" id="phase-5">
+        <div class="phase-header">
+            <div class="phase-number">5</div>
+            <div>
+                <h2>Medium: Mobile App Polish</h2>
+                <div class="subtitle">Improve UX, type safety, and error handling</div>
+            </div>
+        </div>
+
+        <div class="step" id="step-5-1">
+            <div class="step-header">
+                <span class="step-id">5.1</span>
+                <h3>Use Environment-Based API URL</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> api.ts, ChatWebSocketService.ts (mobile + mobile-expo)</span>
+            </div>
+            <pre><code>// api.ts — use Expo constants:
+import Constants from 'expo-constants';
+const API_URL = Constants.expoConfig?.extra?.apiUrl
+    ? `${Constants.expoConfig.extra.apiUrl}/api`
+    : 'http://localhost:8080/api';
+
+// ChatWebSocketService.ts — same pattern for WS_URL</code></pre>
+        </div>
+
+        <div class="step" id="step-5-2">
+            <div class="step-header">
+                <span class="step-id">5.2</span>
+                <h3>Remove Duplicate WebSocket Service</h3>
+                <span class="file-tag"><span class="change-tag tag-remove">REMOVE</span> chatSocket.ts &nbsp; <span class="change-tag tag-modify">MODIFY</span> ChatScreen.tsx imports</span>
+            </div>
+            <p>Two competing WebSocket implementations exist: <code>ChatWebSocketService.ts</code> (SockJS) and <code>chatSocket.ts</code> (raw WebSocket). <code>ChatScreen</code> imports from <code>chatSocket.ts</code>. Remove <code>chatSocket.ts</code> and update imports to use <code>ChatWebSocketService</code> (SockJS matches the backend's <code>WebSocketConfig</code>).</p>
+        </div>
+
+        <div class="step" id="step-5-3">
+            <div class="step-header">
+                <span class="step-id">5.3</span>
+                <h3>Add Loading Indicators to All Screens</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> WorkoutsScreen, GymsScreen, ChatScreen, ProfileScreen</span>
+            </div>
+            <p>Add <code>ActivityIndicator</code> to each screen that makes API calls. Show it while data is loading.</p>
+            <pre><code>const [loading, setLoading] = useState(true);
+
+if (loading) {
+    return &lt;ActivityIndicator size="large" color="#4CAF50" style={styles.loader} /&gt;;
+}</code></pre>
+        </div>
+
+        <div class="step" id="step-5-4">
+            <div class="step-header">
+                <span class="step-id">5.4</span>
+                <h3>Build HomeScreen with Real Data</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> HomeScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Replace the static placeholder with: welcome message using <code>user.name</code>, quick stats from <code>/workouts/stats</code>, unread message count from <code>/chat/unread</code>.</p>
+        </div>
+
+        <div class="step" id="step-5-5">
+            <div class="step-header">
+                <span class="step-id">5.5</span>
+                <h3>Add Delete Workout Option</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> WorkoutsScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Add swipe-to-delete or long-press menu on each workout card. Call <code>DELETE /api/workouts/{id}</code> with a confirmation dialog.</p>
+        </div>
+
+        <div class="step" id="step-5-6">
+            <div class="step-header">
+                <span class="step-id">5.6</span>
+                <h3>Fix RegisterScreen Type Cast</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> RegisterScreen.tsx (mobile + mobile-expo)</span>
+            </div>
+            <p>Replace <code>form as any</code> with a properly typed object matching <code>RegisterData</code>.</p>
+        </div>
+
+        <div class="step" id="step-5-7">
+            <div class="step-header">
+                <span class="step-id">5.7</span>
+                <h3>Fix AuthContext Test Assertion</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> AuthContext.test.tsx (mobile-expo)</span>
+            </div>
+            <p>Line 77 asserts <code>AsyncStorage.setItem</code> has <strong>not</strong> been called after login — this is the opposite of expected behavior. Change to:</p>
+            <pre><code>await waitFor(() =&gt; {
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('token', 'test-token');
+});</code></pre>
+        </div>
+
+        <div class="step" id="step-5-8">
+            <div class="step-header">
+                <span class="step-id">5.8</span>
+                <h3>Fix WorkoutControllerTest Duplicate Method</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> WorkoutControllerTest.java</span>
+            </div>
+            <p>Remove the orphaned <code>getStats_ShouldReturnStats()</code> method that sits outside the class closing brace and references an undeclared <code>mockMvc</code>.</p>
+        </div>
+    </section>
+
+    <!-- ===================== PHASE 6 ===================== -->
+    <section class="phase severity-low" id="phase-6">
+        <div class="phase-header">
+            <div class="phase-number">6</div>
+            <div>
+                <h2>Low: Infrastructure &amp; CI</h2>
+                <div class="subtitle">Improve build reliability, testing, and deployment readiness</div>
+            </div>
+        </div>
+
+        <div class="step" id="step-6-1">
+            <div class="step-header">
+                <span class="step-id">6.1</span>
+                <h3>Fix CI Type Check</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> .github/workflows/ci.yml</span>
+            </div>
+            <p>Remove <code>|| true</code> from the type check step so TypeScript errors actually fail the build.</p>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>run: npx tsc --noEmit || true</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>run: npx tsc --noEmit</code></pre></div>
+            </div>
+        </div>
+
+        <div class="step" id="step-6-2">
+            <div class="step-header">
+                <span class="step-id">6.2</span>
+                <h3>Improve Docker Test in CI</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> .github/workflows/ci.yml</span>
+            </div>
+            <p>Replace the meaningless <code>java -version</code> test with an actual application health check.</p>
+            <pre><code>- name: Test Docker image
+  run: |
+    docker run -d -p 8080:8080 --name gymsync-test gymsync-backend:latest
+    sleep 15
+    curl -f http://localhost:8080/api/auth/register || exit 1
+    docker stop gymsync-test</code></pre>
+        </div>
+
+        <div class="step" id="step-6-3">
+            <div class="step-header">
+                <span class="step-id">6.3</span>
+                <h3>Add .dockerignore</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> backend/.dockerignore</span>
+            </div>
+            <pre><code>target/
+.idea/
+*.iml
+.git/
+.github/
+README.md</code></pre>
+        </div>
+
+        <div class="step" id="step-6-4">
+            <div class="step-header">
+                <span class="step-id">6.4</span>
+                <h3>Add Docker HEALTHCHECK</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> backend/Dockerfile</span>
+            </div>
+            <pre><code>HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost:8080/api/auth/register || exit 1</code></pre>
+        </div>
+
+        <div class="step" id="step-6-5">
+            <div class="step-header">
+                <span class="step-id">6.5</span>
+                <h3>Change Production Logging to INFO</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> application.properties</span>
+            </div>
+            <div class="diff">
+                <div class="diff-before"><div class="diff-label">BEFORE</div><pre><code>logging.level.com.gymsync=DEBUG
+logging.level.org.springframework.security=DEBUG</code></pre></div>
+                <div class="diff-after"><div class="diff-label">AFTER</div><pre><code>logging.level.com.gymsync=INFO
+logging.level.org.springframework.security=WARN</code></pre></div>
+            </div>
+        </div>
+
+        <div class="step" id="step-6-6">
+            <div class="step-header">
+                <span class="step-id">6.6</span>
+                <h3>Remove Bean Override Allowance in Tests</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> application-test.properties</span>
+            </div>
+            <p>Remove <code>spring.main.allow-bean-definition-overriding=true</code>. If tests fail, fix the conflicting bean definitions instead.</p>
+        </div>
+
+        <div class="step" id="step-6-7">
+            <div class="step-header">
+                <span class="step-id">6.7</span>
+                <h3>Enable Disabled E2E Tests</h3>
+                <span class="file-tag"><span class="change-tag tag-fix">FIX</span> 5 test files</span>
+            </div>
+            <p>Remove <code>@Disabled</code> from 7 test methods across 4 files. Tests may need updates for JWT authentication (obtain a token first).</p>
+            <ul>
+                <li><code>WorkoutE2EFlowTest.java</code> — 2 disabled methods</li>
+                <li><code>ChatE2EFlowTest.java</code> — 1 disabled method</li>
+                <li><code>UserProfileE2EFlowTest.java</code> — 2 disabled methods</li>
+                <li><code>WorkoutIntegrationTest.java</code> — 2 disabled methods</li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-6-8">
+            <div class="step-header">
+                <span class="step-id">6.8</span>
+                <h3>Create Missing Test Classes</h3>
+                <span class="file-tag"><span class="change-tag tag-new">NEW</span> AuthControllerTest, UserControllerTest, JwtUtilTest</span>
+            </div>
+            <ul>
+                <li><strong>AuthControllerTest</strong> — register success, duplicate username, duplicate email, invalid data, login success, wrong password</li>
+                <li><strong>UserControllerTest</strong> — get profile, update profile, get schedule, find buddies</li>
+                <li><strong>JwtUtilTest</strong> — generate token, validate token, extract username, expired token</li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-6-9">
+            <div class="step-header">
+                <span class="step-id">6.9</span>
+                <h3>Add Backend Lint/Static Analysis to CI</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> .github/workflows/ci.yml &nbsp; <span class="change-tag tag-modify">MODIFY</span> pom.xml</span>
+            </div>
+            <p>Add <code>maven-checkstyle-plugin</code> to <code>pom.xml</code> with a basic ruleset, and add a Checkstyle step to CI.</p>
+        </div>
+
+        <div class="step" id="step-6-10">
+            <div class="step-header">
+                <span class="step-id">6.10</span>
+                <h3>Add Mobile Lint to CI</h3>
+                <span class="file-tag"><span class="change-tag tag-modify">MODIFY</span> .github/workflows/ci.yml</span>
+            </div>
+            <p>Add <code>npm run lint</code> step after the test step in the <code>mobile-expo</code> job.</p>
+        </div>
+    </section>
+
+    <!-- ===================== SUMMARY ===================== -->
+    <section class="phase" id="summary">
+        <div class="phase-header">
+            <div class="phase-number" style="background: var(--accent-glow); color: var(--accent); border: 2px solid var(--accent);">S</div>
+            <div>
+                <h2>Summary: Files Changed Per Phase</h2>
+                <div class="subtitle">All new, modified, and removed files organized by phase</div>
+            </div>
+        </div>
+
+        <table class="file-table">
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>New Files</th>
+                    <th>Modified Files</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--critical)">Phase 1</span></td>
+                    <td>JwtUtil, CustomUserDetailsService, JwtAuthenticationFilter, CorsConfig, GlobalExceptionHandler</td>
+                    <td>User.java, SecurityConfig, AuthController, AuthContext.tsx (2), api.ts (2), App.tsx (2)</td>
+                </tr>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--high)">Phase 2</span></td>
+                    <td>UserService, UserProfileResponse, UserUpdateRequest, GymController</td>
+                    <td>UserRepository, UserController, WorkoutLogRepository, WorkoutService, WorkoutController, ChatController, ExerciseSet.java</td>
+                </tr>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--high)">Phase 3</span></td>
+                    <td>WorkoutDetailScreen.tsx</td>
+                    <td>types/index.ts (2), App.tsx (2), ChatScreen.tsx (2), LoginScreen.tsx (2), RegisterScreen.tsx (2), WorkoutsScreen.tsx (2), LogWorkoutScreen.tsx (2), ProfileScreen.tsx (2), GymsScreen.tsx (2)</td>
+                </tr>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--medium)">Phase 4</span></td>
+                    <td>ChatService</td>
+                    <td>ChatController, WorkoutController, WorkoutService, WorkoutLogRepository, TimeSlot.java, WorkoutLog.java, pom.xml, mobile/package.json</td>
+                </tr>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--medium)">Phase 5</span></td>
+                    <td>—</td>
+                    <td>api.ts (2), ChatWebSocketService.ts (2), HomeScreen.tsx (2), WorkoutsScreen.tsx (2), AuthContext.test.tsx, RegisterScreen.tsx (2), WorkoutControllerTest.java</td>
+                </tr>
+                <tr>
+                    <td><span class="change-tag tag-fix" style="color:var(--low)">Phase 6</span></td>
+                    <td>.dockerignore, AuthControllerTest, UserControllerTest, JwtUtilTest</td>
+                    <td>ci.yml, Dockerfile, application.properties, application-test.properties, 5 E2E test files</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-grid" style="margin-top: 2rem;">
+            <div class="summary-card">
+                <div class="number" style="color: var(--accent)">~10</div>
+                <div class="label">New Files</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" style="color: var(--text)">~45</div>
+                <div class="label">File Edits</div>
+            </div>
+            <div class="summary-card">
+                <div class="number" style="color: var(--text)">2-3</div>
+                <div class="label">Weeks (1 developer)</div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>
+
+<script>
+// Progress bar
+window.addEventListener('scroll', () => {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = scrolled + '%';
+
+    const btn = document.getElementById('scrollTop');
+    btn.classList.toggle('visible', window.scrollY > 500);
+});
+
+// Active nav link
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav a');
+window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+        const top = section.offsetTop - 80;
+        if (window.scrollY >= top) current = section.id;
+    });
+    navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+});
+</script>
+
+</body>
+</html>

@@ -27,5 +27,5 @@ public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
                                    @Param("end") LocalDate end);
     
     @Query("SELECT wl FROM WorkoutLog wl LEFT JOIN FETCH wl.exerciseSets WHERE wl.id = :id")
-    WorkoutLog findByIdWithExerciseSets(@Param("id") Long id);
+    java.util.Optional<WorkoutLog> findByIdWithExerciseSets(@Param("id") Long id);
 }

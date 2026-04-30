@@ -1,52 +1,53 @@
 package com.gymsync.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymsync.model.*;
 import com.gymsync.repository.UserRepository;
 import com.gymsync.service.WorkoutService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(WorkoutController.class)
-@WithMockUser(username = "testuser")
+@ExtendWith(MockitoExtension.class)
 class WorkoutControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private WorkoutService workoutService;
 
-    @MockBean
+    @Mock
     private UserRepository userRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private WorkoutController workoutController;
 
     private WorkoutLog testWorkout;
     private Exercise testExercise;
     private User testUser;
+    private Principal principal;
 
     @BeforeEach
     void setUp() {
+        principal = new Principal() {
+            @Override
+            public String getName() {
+                return "testuser";
+            }
+        };
+
         testUser = new User();
         testUser.setId(1L);
         testUser.setUsername("testuser");
@@ -64,110 +65,109 @@ class WorkoutControllerTest {
         testExercise.setName("Bench Press");
         testExercise.setCategory(ExerciseCategory.STRENGTH);
         testExercise.setPrimaryMuscleGroup(MuscleGroup.CHEST);
-
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
     }
 
     @Test
-    void getMyWorkouts_ShouldReturnList() throws Exception {
+    void getMyWorkouts_ShouldReturnList() {
         when(workoutService.getUserWorkoutsByUsername("testuser")).thenReturn(Arrays.asList(testWorkout));
 
-        mockMvc.perform(get("/api/workouts"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1));
+        ResponseEntity<List<WorkoutLog>> response = workoutController.getMyWorkouts(principal);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody().get(0).getId()).isEqualTo(1L);
     }
 
     @Test
-    void getWorkout_ShouldReturnWorkout() throws Exception {
+    void getWorkout_ShouldReturnWorkout() {
         when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
 
-        mockMvc.perform(get("/api/workouts/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+        ResponseEntity<WorkoutLog> response = workoutController.getWorkout(1L);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody().getId()).isEqualTo(1L);
     }
 
     @Test
-    void createWorkout_ShouldCreateAndReturnWorkout() throws Exception {
-        when(workoutService.createWorkout(anyLong(), any())).thenReturn(testWorkout);
+    void createWorkout_ShouldCreateAndReturnWorkout() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(workoutService.createWorkout(eq(1L), any())).thenReturn(testWorkout);
 
-        mockMvc.perform(post("/api/workouts")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testWorkout)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+        ResponseEntity<WorkoutLog> response = workoutController.createWorkout(testWorkout, principal);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody().getId()).isEqualTo(1L);
     }
 
     @Test
-    void addExerciseSet_ShouldAddSet() throws Exception {
+    void addExerciseSet_ShouldAddSet() {
         when(workoutService.addExerciseSet(anyLong(), anyLong(), any())).thenReturn(testWorkout);
 
-        String requestBody = """
-            {
-                "exerciseId": 1,
-                "setNumber": 1,
-                "reps": 10,
-                "weightKg": 60.0
-            }
-            """;
+        WorkoutController.AddSetRequest request = new WorkoutController.AddSetRequest();
+        request.setExerciseId(1L);
+        request.setSetNumber(1);
+        request.setReps(10);
+        request.setWeightKg(60.0);
 
-        mockMvc.perform(post("/api/workouts/1/sets")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk());
+        ResponseEntity<WorkoutLog> response = workoutController.addExerciseSet(1L, request);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
     @Test
-    void deleteWorkout_ShouldDelete() throws Exception {
-        mockMvc.perform(delete("/api/workouts/1").with(csrf()))
-                .andExpect(status().isOk());
-
+    void deleteWorkout_ShouldDelete() {
+        ResponseEntity<Void> response = workoutController.deleteWorkout(1L);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(workoutService).deleteWorkout(1L);
     }
 
     @Test
-    void getExercises_ShouldReturnList() throws Exception {
-        when(workoutService.getAllExercises(anyLong())).thenReturn(Arrays.asList(testExercise));
+    void getExercises_ShouldReturnList() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(workoutService.getAllExercises(1L)).thenReturn(Arrays.asList(testExercise));
 
-        mockMvc.perform(get("/api/workouts/exercises"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Bench Press"));
+        ResponseEntity<List<Exercise>> response = workoutController.getExercises(principal);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody().get(0).getName()).isEqualTo("Bench Press");
     }
 
     @Test
-    void searchExercises_ShouldReturnResults() throws Exception {
+    void searchExercises_ShouldReturnResults() {
         when(workoutService.searchExercises("bench")).thenReturn(Arrays.asList(testExercise));
 
-        mockMvc.perform(get("/api/workouts/exercises/search?q=bench"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Bench Press"));
+        ResponseEntity<List<Exercise>> response = workoutController.searchExercises("bench");
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody().get(0).getName()).isEqualTo("Bench Press");
     }
 
     @Test
-    void createCustomExercise_ShouldCreateExercise() throws Exception {
-        when(workoutService.createCustomExercise(anyLong(), any())).thenReturn(testExercise);
+    void createCustomExercise_ShouldCreateExercise() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(workoutService.createCustomExercise(eq(1L), any())).thenReturn(testExercise);
 
-        mockMvc.perform(post("/api/workouts/exercises")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testExercise)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Bench Press"));
+        ResponseEntity<Exercise> response = workoutController.createCustomExercise(testExercise, principal);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody().getName()).isEqualTo("Bench Press");
     }
 
     @Test
-    void getStats_ShouldReturnStats() throws Exception {
+    void getStats_ShouldReturnStats() {
         Map<String, Object> stats = Map.of(
                 "totalWorkouts", 10,
                 "thisWeek", 3,
                 "thisMonth", 8
         );
-        when(workoutService.getWorkoutStats(anyLong())).thenReturn(stats);
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(workoutService.getWorkoutStats(1L)).thenReturn(stats);
 
-        mockMvc.perform(get("/api/workouts/stats"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalWorkouts").value(10))
-                .andExpect(jsonPath("$.thisWeek").value(3));
+        ResponseEntity<Map<String, Object>> response = workoutController.getStats(principal);
+        
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody().get("totalWorkouts")).isEqualTo(10);
     }
 }

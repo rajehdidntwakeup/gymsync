@@ -7,7 +7,7 @@ import com.gymsync.repository.ChatMessageRepository;
 import com.gymsync.repository.UserRepository;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,11 +26,11 @@ import java.util.Map;
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessageSendingOperations messagingTemplate;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
-    public ChatController(SimpMessagingTemplate messagingTemplate,
+    public ChatController(SimpMessageSendingOperations messagingTemplate,
                          ChatMessageRepository chatMessageRepository,
                          UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;

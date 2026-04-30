@@ -11,9 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
 class ChatControllerTest {
 
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
+    private SimpMessageSendingOperations messagingTemplate;
 
     @Mock
     private ChatMessageRepository chatMessageRepository;
@@ -34,7 +35,6 @@ class ChatControllerTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
     private Principal principal;
 
     @InjectMocks
@@ -46,6 +46,12 @@ class ChatControllerTest {
 
     @BeforeEach
     void setUp() {
+        principal = new Principal() {
+            @Override
+            public String getName() {
+                return "sender";
+            }
+        };
         sender = new User();
         sender.setId(1L);
         sender.setUsername("sender");
@@ -61,13 +67,14 @@ class ChatControllerTest {
         message.setSender(sender);
         message.setReceiver(receiver);
         message.setContent("Hello!");
-        message.onCreate(); // Set timestamp
+        message.setTimestamp(LocalDateTime.now());
+
+        chatController = new ChatController(messagingTemplate, chatMessageRepository, userRepository);
     }
 
     @Test
     void sendMessage_ShouldSaveAndSendMessage() {
         // Given
-        when(principal.getName()).thenReturn("sender");
         when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
         when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
         when(chatMessageRepository.save(any())).thenReturn(message);
@@ -88,7 +95,7 @@ class ChatControllerTest {
     @Test
     void sendMessage_WhenSenderNotFound_ShouldThrowException() {
         // Given
-        when(principal.getName()).thenReturn("unknown");
+        Principal unknownPrincipal = () -> "unknown";
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         ChatController.ChatMessageRequest request = new ChatController.ChatMessageRequest();
@@ -96,7 +103,7 @@ class ChatControllerTest {
         request.setContent("Hello!");
 
         // When & Then
-        assertThatThrownBy(() -> chatController.sendMessage(request, principal))
+        assertThatThrownBy(() -> chatController.sendMessage(request, unknownPrincipal))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Sender not found");
     }
@@ -104,7 +111,6 @@ class ChatControllerTest {
     @Test
     void sendTypingNotification_ShouldSendNotification() {
         // Given
-        when(principal.getName()).thenReturn("sender");
         when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
 
         ChatController.TypingRequest request = new ChatController.TypingRequest();
@@ -123,7 +129,6 @@ class ChatControllerTest {
     @Test
     void getChatHistory_ShouldReturnMessages() {
         // Given
-        when(principal.getName()).thenReturn("sender");
         when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
         when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
         when(chatMessageRepository.findConversation(sender, receiver))

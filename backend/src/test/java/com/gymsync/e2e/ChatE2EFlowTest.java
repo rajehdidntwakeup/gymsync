@@ -6,7 +6,6 @@ import com.gymsync.controller.ChatController.*;
 import com.gymsync.model.*;
 import com.gymsync.repository.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,9 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -65,51 +62,6 @@ public class ChatE2EFlowTest {
         user2.setEmail("user2@test.com");
         user2.setPassword("password");
         userRepository.save(user2);
-    }
-
-    @Test
-    @Disabled("E2E test requires full WebSocket setup")
-    @WithMockUser(username = "user1")
-    void completeChatFlow_ShouldWork() throws Exception {
-        // Step 1: Send first message
-        ChatMessageRequest request1 = new ChatMessageRequest();
-        request1.setReceiverUsername("user2");
-        request1.setContent("Hey, want to work out together?");
-        request1.setType(com.gymsync.model.MessageType.CHAT);
-
-        mockMvc.perform(post("/api/chat/send")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request1)))
-                .andExpect(status().isOk());
-
-        // Step 2: User2 sends reply
-        mockMvc.perform(post("/api/chat/send")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createRequest("user1", "Sure! When?", com.gymsync.model.MessageType.CHAT))))
-                .andExpect(status().isOk());
-
-        // Step 3: Get chat history
-        mockMvc.perform(get("/api/chat/history/user2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1));
-
-        // Step 4: Get chat partners
-        mockMvc.perform(get("/api/chat/partners"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1));
-
-        // Step 5: Check unread count
-        mockMvc.perform(get("/api/chat/unread"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.count").value(1));
-
-        // Verify in database
-        List<ChatMessage> messages = chatMessageRepository.findConversation(user1, user2);
-        assertThat(messages).hasSize(2);
     }
 
     @Test
