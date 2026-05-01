@@ -24,7 +24,8 @@ describe('API Configuration', () => {
   });
 
   it('should validate token format', () => {
-    const validToken = 'eyJhbG...test';
+    // Use a realistic JWT-like token (base64url segments separated by dots)
+    const validToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.testsig';
     expect(validToken).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
   });
 });
