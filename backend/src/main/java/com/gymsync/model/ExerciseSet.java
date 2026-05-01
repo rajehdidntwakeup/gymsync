@@ -37,7 +37,7 @@ public class ExerciseSet {
 
     private String notes;
 
-    private Boolean completed = true;
+    private Boolean completed = false;
 
     // Getters and Setters
     public Long getId() { return id; }
