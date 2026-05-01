@@ -20,7 +20,7 @@ describe('AuthContext Logic', () => {
 describe('API Configuration', () => {
   it('should have correct API URL format', () => {
     const API_URL = 'http://localhost:8080/api';
-    expect(API_URL).toMatch(/^http:\/\/[^\/]+\/api$/);
+    expect(API_URL).toMatch(/^http:\/\/[^/]+\/api$/);
   });
 
   it('should validate token format', () => {
@@ -46,7 +46,7 @@ describe('Auth Response', () => {
   });
 
   it('should construct User from auth response + profile', () => {
-    const authData = { token: 'token', type: 'Bearer', userId: 1, username: 'testuser' };
+    const _authData = { token: 'token', type: 'Bearer', userId: 1, username: 'testuser' };
     const profileData = {
       id: 1,
       username: 'testuser',

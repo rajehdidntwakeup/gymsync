@@ -21,7 +21,7 @@ jest.mock('../api', () => ({
 // Mock AuthContext since we can't render React Native components in node env
 jest.mock('../AuthContext', () => ({
   __esModule: true,
-  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  AuthProvider: ({ children }: { children: unknown }) => children,
   useAuth: jest.fn(),
 }));
 
