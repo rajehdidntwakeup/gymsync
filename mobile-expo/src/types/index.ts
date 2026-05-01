@@ -98,3 +98,12 @@ export interface ChatPartner {
   name: string;
   fitnessLevel: string;
 }
+
+// Navigation types
+export type StackParamList = {
+  Main: undefined;
+  LogWorkout: undefined;
+  Login: undefined;
+  Register: undefined;
+  WorkoutDetail: { workoutId: number };
+};

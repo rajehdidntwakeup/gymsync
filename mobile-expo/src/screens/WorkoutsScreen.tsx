@@ -8,8 +8,10 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import api from '../services/api';
+import type { StackParamList } from '../types';
 
 interface WorkoutLog {
   id: number;
@@ -24,7 +26,7 @@ export default function WorkoutsScreen() {
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
   const [stats, setStats] = useState({ totalWorkouts: 0, thisWeek: 0, thisMonth: 0 });
   const [refreshing, setRefreshing] = useState(false);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<StackParamList>>();
 
   useEffect(() => {
     loadData();

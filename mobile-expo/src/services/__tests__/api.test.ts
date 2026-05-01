@@ -42,10 +42,10 @@ describe('API Service', () => {
   });
 
   it('should have request interceptor configured', () => {
-    expect(api.interceptors.request.handlers.length).toBeGreaterThan(0);
+    expect(api.interceptors.request.handlers?.length).toBeGreaterThan(0);
   });
 
   it('should have response interceptor configured', () => {
-    expect(api.interceptors.response.handlers.length).toBeGreaterThan(0);
+    expect(api.interceptors.response.handlers?.length).toBeGreaterThan(0);
   });
 });

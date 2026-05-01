@@ -59,6 +59,7 @@ class WorkoutControllerTest {
         testWorkout.setWorkoutDate(LocalDate.now());
         testWorkout.setDurationMinutes(60);
         testWorkout.setNotes("Test workout");
+        testWorkout.setUser(testUser);
 
         testExercise = new Exercise();
         testExercise.setId(1L);
@@ -82,7 +83,7 @@ class WorkoutControllerTest {
     void getWorkout_ShouldReturnWorkout() {
         when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
 
-        ResponseEntity<WorkoutLog> response = workoutController.getWorkout(1L);
+        ResponseEntity<WorkoutLog> response = workoutController.getWorkout(1L, principal);
         
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().getId()).isEqualTo(1L);
@@ -101,6 +102,7 @@ class WorkoutControllerTest {
 
     @Test
     void addExerciseSet_ShouldAddSet() {
+        when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
         when(workoutService.addExerciseSet(anyLong(), anyLong(), any())).thenReturn(testWorkout);
 
         WorkoutController.AddSetRequest request = new WorkoutController.AddSetRequest();
@@ -109,14 +111,16 @@ class WorkoutControllerTest {
         request.setReps(10);
         request.setWeightKg(60.0);
 
-        ResponseEntity<WorkoutLog> response = workoutController.addExerciseSet(1L, request);
+        ResponseEntity<WorkoutLog> response = workoutController.addExerciseSet(1L, request, principal);
         
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
     @Test
     void deleteWorkout_ShouldDelete() {
-        ResponseEntity<Void> response = workoutController.deleteWorkout(1L);
+        when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
+
+        ResponseEntity<Void> response = workoutController.deleteWorkout(1L, principal);
         
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(workoutService).deleteWorkout(1L);

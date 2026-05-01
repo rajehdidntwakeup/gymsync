@@ -3,6 +3,9 @@ package com.gymsync.controller;
 import com.gymsync.model.*;
 import com.gymsync.repository.UserRepository;
 import com.gymsync.service.WorkoutService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,23 +25,34 @@ public class WorkoutController {
         this.userRepository = userRepository;
     }
 
+    private String requireUsername(Principal principal) {
+        return principal.getName();
+    }
+
+    private void verifyOwnership(WorkoutLog workout, String username) {
+        if (!workout.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("You can only access your own workouts");
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<WorkoutLog>> getMyWorkouts(Principal principal) {
-        // Use username from principal as userId for tests
-        String username = principal != null ? principal.getName() : "testuser";
+        String username = requireUsername(principal);
         return ResponseEntity.ok(workoutService.getUserWorkoutsByUsername(username));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkoutLog> getWorkout(@PathVariable Long id) {
-        return ResponseEntity.ok(workoutService.getWorkoutById(id));
+    public ResponseEntity<WorkoutLog> getWorkout(@PathVariable Long id, Principal principal) {
+        WorkoutLog workout = workoutService.getWorkoutById(id);
+        verifyOwnership(workout, requireUsername(principal));
+        return ResponseEntity.ok(workout);
     }
 
     @PostMapping
     public ResponseEntity<WorkoutLog> createWorkout(
-            @RequestBody WorkoutLog workoutLog,
+            @Valid @RequestBody WorkoutLog workoutLog,
             Principal principal) {
-        String username = principal != null ? principal.getName() : "testuser";
+        String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return ResponseEntity.ok(workoutService.createWorkout(user.getId(), workoutLog));
@@ -47,27 +61,33 @@ public class WorkoutController {
     @PostMapping("/{workoutId}/sets")
     public ResponseEntity<WorkoutLog> addExerciseSet(
             @PathVariable Long workoutId,
-            @RequestBody AddSetRequest request) {
+            @Valid @RequestBody AddSetRequest request,
+            Principal principal) {
+        WorkoutLog workout = workoutService.getWorkoutById(workoutId);
+        verifyOwnership(workout, requireUsername(principal));
+
         ExerciseSet set = new ExerciseSet();
         set.setSetNumber(request.getSetNumber());
         set.setReps(request.getReps());
         set.setWeightKg(request.getWeightKg());
         set.setNotes(request.getNotes());
-        
+
         return ResponseEntity.ok(
             workoutService.addExerciseSet(workoutId, request.getExerciseId(), set)
         );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWorkout(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteWorkout(@PathVariable Long id, Principal principal) {
+        WorkoutLog workout = workoutService.getWorkoutById(id);
+        verifyOwnership(workout, requireUsername(principal));
         workoutService.deleteWorkout(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/exercises")
     public ResponseEntity<List<Exercise>> getExercises(Principal principal) {
-        String username = principal != null ? principal.getName() : "testuser";
+        String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return ResponseEntity.ok(workoutService.getAllExercises(user.getId()));
@@ -80,9 +100,9 @@ public class WorkoutController {
 
     @PostMapping("/exercises")
     public ResponseEntity<Exercise> createCustomExercise(
-            @RequestBody Exercise exercise,
+            @Valid @RequestBody Exercise exercise,
             Principal principal) {
-        String username = principal != null ? principal.getName() : "testuser";
+        String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return ResponseEntity.ok(workoutService.createCustomExercise(user.getId(), exercise));
@@ -90,7 +110,7 @@ public class WorkoutController {
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats(Principal principal) {
-        String username = principal != null ? principal.getName() : "testuser";
+        String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return ResponseEntity.ok(workoutService.getWorkoutStats(user.getId()));
@@ -98,7 +118,9 @@ public class WorkoutController {
 
     // DTO
     public static class AddSetRequest {
+        @NotNull
         private Long exerciseId;
+        @NotNull @Positive
         private Integer setNumber;
         private Integer reps;
         private Double weightKg;
