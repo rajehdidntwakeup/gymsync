@@ -102,5 +102,20 @@ jobs:
       - name: Build Docker image
         run: docker build -t gymsync-backend:latest .
         
-      - name: Test Docker image
-        run: docker run --rm gymsync-backend:latest java -version
+      - name: Verify Docker image starts
+        run: |
+          # Start container in background and check it boots successfully
+          docker run -d --name gymsync-test -p 8080:8080 gymsync-backend:latest
+          # Wait up to 30s for the app to start
+          for i in $(seq 1 30); do
+            if docker logs gymsync-test 2>&1 | grep -q "Started GymSyncApplication"; then
+              echo "App started successfully"
+              docker stop gymsync-test
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "App failed to start within 30s"
+          docker logs gymsync-test
+          docker stop gymsync-test
+          exit 1
