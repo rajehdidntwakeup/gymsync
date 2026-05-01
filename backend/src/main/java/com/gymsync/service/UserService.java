@@ -1,7 +1,9 @@
 package com.gymsync.service;
 
+import com.gymsync.dto.UserUpdateRequest;
 import com.gymsync.model.User;
 import com.gymsync.model.TimeSlot;
+import com.gymsync.model.FitnessLevel;
 import com.gymsync.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +26,13 @@ public class UserService {
     }
 
     @Transactional
-    public User updateProfile(String username, User updateData) {
+    public User updateProfile(String username, UserUpdateRequest req) {
         User user = getUserByUsername(username);
-        user.setName(updateData.getName());
-        user.setFitnessLevel(updateData.getFitnessLevel());
-        user.setGymLocation(updateData.getGymLocation());
-        user.setWorkoutGoals(updateData.getWorkoutGoals());
+        if (req.getName() != null) user.setName(req.getName());
+        if (req.getEmail() != null) user.setEmail(req.getEmail());
+        if (req.getFitnessLevel() != null) user.setFitnessLevel(FitnessLevel.valueOf(req.getFitnessLevel()));
+        if (req.getGymLocation() != null) user.setGymLocation(req.getGymLocation());
+        if (req.getWorkoutGoals() != null) user.setWorkoutGoals(req.getWorkoutGoals());
         return userRepository.save(user);
     }
 
@@ -47,11 +50,15 @@ public class UserService {
     }
 
     public List<User> findBuddies(String username, String gymLocation, String fitnessLevel) {
-        // Simple implementation for now
-        return userRepository.findAll().stream()
-                .filter(u -> !u.getUsername().equals(username))
-                .filter(u -> gymLocation == null || gymLocation.equals(u.getGymLocation()))
-                .filter(u -> fitnessLevel == null || fitnessLevel.equals(u.getFitnessLevel().name()))
-                .toList();
+        if (gymLocation != null && fitnessLevel != null) {
+            FitnessLevel level = FitnessLevel.valueOf(fitnessLevel);
+            return userRepository.findByGymLocationAndFitnessLevelAndUsernameNot(gymLocation, level, username);
+        } else if (gymLocation != null) {
+            return userRepository.findByGymLocationAndUsernameNot(gymLocation, username);
+        } else if (fitnessLevel != null) {
+            FitnessLevel level = FitnessLevel.valueOf(fitnessLevel);
+            return userRepository.findByFitnessLevelAndUsernameNot(level, username);
+        }
+        return userRepository.findByUsernameNot(username);
     }
 }

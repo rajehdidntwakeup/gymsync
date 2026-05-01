@@ -1,8 +1,11 @@
 package com.gymsync.controller;
 
-import com.gymsync.model.User;
+import com.gymsync.dto.UserProfileResponse;
+import com.gymsync.dto.UserUpdateRequest;
 import com.gymsync.model.TimeSlot;
+import com.gymsync.model.User;
 import com.gymsync.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,15 +29,18 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile(Principal principal) {
+    public ResponseEntity<UserProfileResponse> getMyProfile(Principal principal) {
         String username = getUsername(principal);
-        return ResponseEntity.ok(userService.getUserByUsername(username));
+        User user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(new UserProfileResponse(user));
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateProfile(@RequestBody User user, Principal principal) {
+    public ResponseEntity<UserProfileResponse> updateProfile(
+            @Valid @RequestBody UserUpdateRequest req, Principal principal) {
         String username = getUsername(principal);
-        return ResponseEntity.ok(userService.updateProfile(username, user));
+        User updated = userService.updateProfile(username, req);
+        return ResponseEntity.ok(new UserProfileResponse(updated));
     }
 
     @GetMapping("/fitness-levels")
@@ -72,6 +78,10 @@ public class UserController {
             @RequestParam(required = false) String fitnessLevel,
             Principal principal) {
         String username = getUsername(principal);
-        return ResponseEntity.ok(userService.findBuddies(username, gymLocation, fitnessLevel));
+        List<User> buddies = userService.findBuddies(username, gymLocation, fitnessLevel);
+        List<UserProfileResponse> dtos = buddies.stream()
+                .map(UserProfileResponse::new)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 }
