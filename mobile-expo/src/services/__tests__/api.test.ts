@@ -20,12 +20,10 @@ describe('API Service', () => {
   });
 
   it('should have correct base URL', () => {
-    // API should be configured with base URL
     expect(api.defaults.baseURL).toBeDefined();
   });
 
   it('should handle token storage', async () => {
-    // Mock getting token
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue('test-token');
     
     const token = await AsyncStorage.getItem('token');
@@ -41,5 +39,13 @@ describe('API Service', () => {
   it('should handle token setting', async () => {
     await AsyncStorage.setItem('token', 'new-token');
     expect(AsyncStorage.setItem).toHaveBeenCalledWith('token', 'new-token');
+  });
+
+  it('should have request interceptor configured', () => {
+    expect(api.interceptors.request.handlers.length).toBeGreaterThan(0);
+  });
+
+  it('should have response interceptor configured', () => {
+    expect(api.interceptors.response.handlers.length).toBeGreaterThan(0);
   });
 });

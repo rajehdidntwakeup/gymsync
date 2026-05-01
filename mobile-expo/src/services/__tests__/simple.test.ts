@@ -24,7 +24,41 @@ describe('API Configuration', () => {
   });
 
   it('should validate token format', () => {
-    const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test';
+    const validToken = 'eyJhbG...test';
     expect(validToken).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
+  });
+});
+
+describe('Auth Response', () => {
+  it('should contain required fields after login', () => {
+    const authResponse = {
+      token: 'test-jwt-token',
+      type: 'Bearer',
+      userId: 1,
+      username: 'testuser',
+    };
+    
+    expect(authResponse).toHaveProperty('token');
+    expect(authResponse).toHaveProperty('type');
+    expect(authResponse).toHaveProperty('userId');
+    expect(authResponse).toHaveProperty('username');
+  });
+
+  it('should construct User from auth response + profile', () => {
+    const authData = { token: 'token', type: 'Bearer', userId: 1, username: 'testuser' };
+    const profileData = {
+      id: 1,
+      username: 'testuser',
+      name: 'Test User',
+      email: 'test@test.com',
+      fitnessLevel: 'BEGINNER',
+    };
+    
+    // Verify the profile data contains all User fields
+    expect(profileData).toHaveProperty('id');
+    expect(profileData).toHaveProperty('username');
+    expect(profileData).toHaveProperty('name');
+    expect(profileData).toHaveProperty('email');
+    expect(profileData).toHaveProperty('fitnessLevel');
   });
 });

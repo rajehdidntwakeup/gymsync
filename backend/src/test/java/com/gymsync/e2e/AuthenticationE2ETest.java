@@ -2,6 +2,7 @@ package com.gymsync.e2e;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymsync.config.TestSecurityConfig;
+import com.gymsync.controller.RegisterRequest;
 import com.gymsync.model.User;
 import com.gymsync.repository.UserRepository;
 import org.springframework.context.annotation.Import;
@@ -47,12 +48,12 @@ class AuthenticationE2ETest {
     @Test
     void completeAuthenticationFlow_ShouldWork() throws Exception {
         // Step 1: Register a new user
-        User newUser = new User();
+        RegisterRequest newUser = new RegisterRequest();
         newUser.setName("John Doe");
         newUser.setUsername("johndoe");
         newUser.setEmail("john@example.com");
         newUser.setPassword("password123");
-        newUser.setFitnessLevel(com.gymsync.model.FitnessLevel.INTERMEDIATE);
+        newUser.setFitnessLevel("INTERMEDIATE");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +76,7 @@ class AuthenticationE2ETest {
                 .andExpect(content().string("Username already taken"));
 
         // Step 3: Try to register with same email (should fail)
-        User anotherUser = new User();
+        RegisterRequest anotherUser = new RegisterRequest();
         anotherUser.setName("Jane Doe");
         anotherUser.setUsername("janedoe");
         anotherUser.setEmail("john@example.com");
