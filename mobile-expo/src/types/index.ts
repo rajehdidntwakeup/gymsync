@@ -59,21 +59,34 @@ export interface AuthResponse {
 export interface Exercise {
   id: number;
   name: string;
-  category: string;
-  muscleGroup: string;
+  category: string;            // ExerciseCategory enum as string
+  primaryMuscleGroup: string;  // MuscleGroup enum as string
+  secondaryMuscleGroup?: string;
+  description?: string;
+  isCustom: boolean;
 }
 
-export interface WorkoutSet {
-  reps: number;
-  weight: number;
+export interface ExerciseSet {
+  id: number;
+  exerciseId: number;
+  exerciseName?: string;  // populated from exercise.name via join
+  setNumber: number;
+  reps: number | null;
+  weightKg: number | null;
+  durationSeconds: number | null;
+  notes: string | null;
+  completed: boolean;
 }
 
 export interface WorkoutLog {
   id: number;
-  exerciseId: number;
-  exerciseName: string;
-  sets: WorkoutSet[];
-  date: string;
+  workoutDate: string;
+  notes: string | null;
+  durationMinutes: number | null;
+  caloriesBurned: number | null;
+  rating: number | null;
+  exerciseSets: ExerciseSet[];
+  createdAt: string;
 }
 
 // Chat types

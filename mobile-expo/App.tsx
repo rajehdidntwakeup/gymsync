@@ -10,6 +10,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import GymsScreen from './src/screens/GymsScreen';
 import WorkoutsScreen from './src/screens/WorkoutsScreen';
 import LogWorkoutScreen from './src/screens/LogWorkoutScreen';
+import WorkoutDetailScreen from './src/screens/WorkoutDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -73,6 +74,7 @@ function AppNavigator() {
         <>
           <Stack.Screen name="Main" component={TabNavigator} />
           <Stack.Screen name="LogWorkout" component={LogWorkoutScreen} />
+          <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
         </>
       ) : (
         <>

@@ -26,6 +26,7 @@ export default function WorkoutsScreen() {
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
   const [stats, setStats] = useState({ totalWorkouts: 0, thisWeek: 0, thisMonth: 0 });
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
   const navigation = useNavigation<NativeStackNavigationProp<StackParamList>>();
 
   useEffect(() => {
@@ -34,14 +35,16 @@ export default function WorkoutsScreen() {
 
   const loadData = async () => {
     try {
+      setError('');
       const [workoutsRes, statsRes] = await Promise.all([
         api.get('/workouts'),
         api.get('/workouts/stats'),
       ]);
       setWorkouts(workoutsRes.data);
       setStats(statsRes.data);
-    } catch (error) {
-      console.error('Failed to load workouts:', error);
+    } catch (err) {
+      console.error('Failed to load workouts:', err);
+      setError('Failed to load workouts. Please try again.');
     }
   };
 
@@ -106,6 +109,8 @@ export default function WorkoutsScreen() {
         </View>
       </View>
 
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
+
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id.toString()}
@@ -166,6 +171,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 100 },
   emptyText: { fontSize: 18, color: '#999', marginTop: 20 },
   emptySubtext: { fontSize: 14, color: '#bbb', marginTop: 10 },
+  errorText: { color: 'red', textAlign: 'center', margin: 10, fontSize: 14 },
   fab: {
     position: 'absolute',
     right: 20,

@@ -22,54 +22,69 @@ export default function ChatScreen({ route }: any) {
   const [partners, setPartners] = useState<ChatPartner[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(partnerUsername);
   const [typing, setTyping] = useState(false);
+  const [error, setError] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
     loadPartners();
-    return () => {
-      chatSocket.disconnect();
-    };
   }, []);
 
   useEffect(() => {
     if (selectedPartner) {
+      // Disconnect any previous socket connection before connecting to new partner
+      chatSocket.disconnect();
       connectSocket();
       loadHistory();
     }
+    return () => {
+      chatSocket.disconnect();
+    };
   }, [selectedPartner]);
 
   const connectSocket = async () => {
     const token = await AsyncStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      setError('Not authenticated. Please log in again.');
+      return;
+    }
 
     chatSocket.connect(
       token,
-      (msg) => setMessages(prev => [...prev, msg]),
+      (msg) => {
+        setError('');
+        setMessages(prev => [...prev, msg]);
+      },
       (notif) => {
         if (notif.username === selectedPartner) {
           setTyping(notif.typing);
         }
       },
-      () => {}
+      () => {
+        setError('Connection lost. Trying to reconnect...');
+      }
     );
   };
 
   const loadPartners = async () => {
     try {
+      setError('');
       const response = await api.get('/chat/partners');
       setPartners(response.data);
     } catch (error) {
       console.error('Failed to load partners:', error);
+      setError('Failed to load chat partners. Pull to retry.');
     }
   };
 
   const loadHistory = async () => {
     if (!selectedPartner) return;
     try {
+      setError('');
       const response = await api.get(`/chat/history/${selectedPartner}`);
       setMessages(response.data);
     } catch (error) {
       console.error('Failed to load history:', error);
+      setError('Failed to load message history. Tap Back and try again.');
     }
   };
 
@@ -113,6 +128,7 @@ export default function ChatScreen({ route }: any) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Chat Partners</Text>
+        {!!error && <Text style={styles.error}>{error}</Text>}
         <FlatList
           data={partners}
           keyExtractor={(item) => item.id.toString()}
@@ -137,6 +153,8 @@ export default function ChatScreen({ route }: any) {
         <Text style={styles.headerTitle}>{selectedPartner}</Text>
         {typing && <Text style={styles.typing}>typing...</Text>}
       </View>
+
+      {!!error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
         data={messages}
@@ -169,6 +187,7 @@ const styles = StyleSheet.create({
   partnerName: { fontSize: 16, fontWeight: 'bold' },
   partnerUsername: { fontSize: 12, color: '#666' },
   emptyText: { textAlign: 'center', marginTop: 50, color: '#999' },
+  error: { color: 'red', textAlign: 'center', marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderColor: '#eee' },
   headerTitle: { fontSize: 16, fontWeight: 'bold', flex: 1, textAlign: 'center' },
   typing: { color: '#4CAF50', fontSize: 12 },
