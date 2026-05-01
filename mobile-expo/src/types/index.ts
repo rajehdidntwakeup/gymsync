@@ -51,6 +51,8 @@ export interface RegisterData {
 export interface AuthResponse {
   token: string;
   type: string;
+  userId: number;
+  username: string;
 }
 
 // Workout types

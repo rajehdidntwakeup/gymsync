@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, LoginCredentials, RegisterData } from '../types';
-import api from './api';
+import api, { setAuthErrorCallback } from './api';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +17,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(async () => {
+    await AsyncStorage.removeItem('token');
+    setUser(null);
+  }, []);
+
+  // Register the 401 callback so the api interceptor can trigger logout
+  useEffect(() => {
+    setAuthErrorCallback(logout);
+    return () => setAuthErrorCallback(null);
+  }, [logout]);
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -25,40 +36,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
-        // TODO: Validate token and get user info
-        // const userData = await api.get('/users/me');
-        // setUser(userData);
+        // Validate token by fetching user profile
+        const response = await api.get('/users/me');
+        setUser(response.data);
       }
     } catch (error) {
+      // Token is invalid or expired — clear it
       console.error('Auth check failed:', error);
+      await AsyncStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (credentials: LoginCredentials) => {
-    try {
-      const response = await api.post('/auth/login', credentials);
-      await AsyncStorage.setItem('token', response.data.token);
-      // TODO: Set user from response
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/auth/login', credentials);
+    const { token } = response.data;
+    await AsyncStorage.setItem('token', token);
+    // Fetch the full user profile after login
+    const userResponse = await api.get('/users/me');
+    setUser(userResponse.data);
   };
 
   const register = async (data: RegisterData) => {
-    try {
-      await api.post('/auth/register', data);
-      // Auto-login after register
-      await login({ username: data.username, password: data.password });
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    setUser(null);
+    await api.post('/auth/register', data);
+    // Auto-login after register
+    await login({ username: data.username, password: data.password });
   };
 
   return (

@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, act } from '@testing-library/react-native';
 import { AuthProvider, useAuth } from '../AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../api';
+import api, { setAuthErrorCallback } from '../api';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -15,8 +15,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('../api', () => ({
   __esModule: true,
   default: {
+    get: jest.fn(),
     post: jest.fn(),
   },
+  setAuthErrorCallback: jest.fn(),
 }));
 
 // Test component to access auth context
@@ -45,9 +47,20 @@ describe('AuthContext', () => {
     expect(getByTestId('loading')).toBeTruthy();
   });
 
-  it('should handle login', async () => {
+  it('should set user after successful login', async () => {
+    const mockUser = {
+      id: 1,
+      username: 'testuser',
+      name: 'Test User',
+      email: 'test@test.com',
+      fitnessLevel: 'BEGINNER',
+    };
+
     (api.post as jest.Mock).mockResolvedValue({
-      data: { token: 'test-token', user: { id: 1, username: 'testuser' } },
+      data: { token: 'test-token', type: 'Bearer', userId: 1, username: 'testuser' },
+    });
+    (api.get as jest.Mock).mockResolvedValue({
+      data: mockUser,
     });
 
     const LoginTest = () => {
@@ -55,10 +68,7 @@ describe('AuthContext', () => {
       return (
         <>
           {!loading && !user && (
-            <button
-              testID="login-btn"
-              onPress={() => login({ username: 'test', password: 'pass' })}
-            />
+            <button testID="login-btn" onPress={() => login({ username: 'test', password: 'pass' })} />
           )}
           {user && <span testID="logged-in">{user.username}</span>}
         </>
@@ -72,19 +82,21 @@ describe('AuthContext', () => {
     );
 
     await waitFor(() => expect(queryByTestId('login-btn')).toBeTruthy());
-    
-    // Note: Actual login flow would need more setup
-    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await getByTestId('login-btn').props.onPress();
+    });
+
+    await waitFor(() => expect(queryByTestId('logged-in')).toBeTruthy());
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('token', 'test-token');
   });
 
-  it('should handle logout', async () => {
+  it('should clear user on logout', async () => {
     const LogoutTest = () => {
       const { logout, user } = useAuth();
       return (
         <>
-          {user && (
-            <button testID="logout-btn" onPress={logout} />
-          )}
+          {user && <button testID="logout-btn" onPress={logout} />}
           {!user && <span testID="logged-out">Logged out</span>}
         </>
       );
@@ -96,7 +108,41 @@ describe('AuthContext', () => {
       </AuthProvider>
     );
 
-    // Initial state - no user
     await waitFor(() => expect(queryByTestId('logged-out')).toBeTruthy());
+  });
+
+  it('should fetch user profile on checkAuth when token exists', async () => {
+    const mockUser = {
+      id: 1,
+      username: 'testuser',
+      name: 'Test User',
+      email: 'test@test.com',
+      fitnessLevel: 'BEGINNER',
+    };
+
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('existing-token');
+    (api.get as jest.Mock).mockResolvedValue({ data: mockUser });
+
+    const { queryByTestId } = render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(queryByTestId('user')).toBeTruthy());
+  });
+
+  it('should clear token when checkAuth fails', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('invalid-token');
+    (api.get as jest.Mock).mockRejectedValue(new Error('Unauthorized'));
+
+    const { queryByTestId } = render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(queryByTestId('no-user')).toBeTruthy());
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith('token');
   });
 });

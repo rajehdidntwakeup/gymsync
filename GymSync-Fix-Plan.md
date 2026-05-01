@@ -2,323 +2,113 @@
 
 > A step-by-step guide to fixing every issue identified in the project analysis.
 > Organized into 6 phases by priority — each phase builds on the previous one.
+> 
+> **Last updated:** 2026-05-01 — verified against actual codebase state after Phase 1 implementation.
 
 ---
 
-## Phase 1: Critical — Authentication & Security
+## Phase 1: Critical — Authentication & Security ✅ COMPLETED
 
 > **Goal:** Make login work end-to-end and stop leaking passwords.
 
-### Step 1.1: Create JWT Utility Class
+### Step 1.1: Create JWT Utility Class ✅
 
-**File:** `backend/src/main/java/com/gymsync/security/JwtUtil.java` (NEW)
+**File:** `backend/src/main/java/com/gymsync/security/JwtUtil.java` (NEW) — **DONE**
 
-Create a utility class that handles JWT token creation and validation using the already-declared `jjwt` dependency.
+Implemented with jjwt 0.12.3. Uses `Jwts.parser()` (not deprecated `parserBuilder()`).
 
-**What to implement:**
-```
-- generateToken(UserDetails userDetails) → String
-  - Use gymsync.jwt.secret and gymsync.jwt.expiration from application.properties
-  - Set subject = username, claim "userId" = user.getId()
-  - Set issuedAt = now, expiration = now + expirationMs
-- extractUsername(String token) → String
-- extractUserId(String token) → Long
-- isTokenValid(String token, UserDetails userDetails) → boolean
-  - Check username matches, token not expired
-- extractAllClaims(String token) → Claims (private helper)
-```
+### Step 1.2: Make User Entity Implement UserDetails ✅
 
-**Configuration values (from `application.properties`):**
-- `gymsync.jwt.secret` — inject via `@Value`
-- `gymsync.jwt.expiration` — inject via `@Value`
+**File:** `backend/src/main/java/com/gymsync/model/User.java` — **DONE**
 
----
+- `implements UserDetails` ✅
+- `@JsonIgnore` on `getPassword()`, `getAuthorities()`, `isAccountNonExpired()`, `isAccountNonLocked()`, `isCredentialsNonExpired()`, `isEnabled()` ✅
+- `getAuthorities()` returns `Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))` ✅
 
-### Step 1.2: Make User Entity Implement UserDetails
+### Step 1.3: Create Custom UserDetailsService ✅
 
-**File:** `backend/src/main/java/com/gymsync/model/User.java` (MODIFY)
+**File:** `backend/src/main/java/com/gymsync/security/CustomUserDetailsService.java` — **DONE**
 
-**Changes:**
-1. Add `implements UserDetails` to the class declaration
-2. Add `@JsonIgnore` on `getPassword()` method (prevents password hash from appearing in API responses)
-3. Implement `getAuthorities()` → return `Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))`
-4. Implement `isAccountNonExpired()`, `isAccountNonLocked()`, `isCredentialsNonExpired()`, `isEnabled()` → all return `true`
-5. `getUsername()` already exists — it maps to the `username` column, which is correct for Spring Security
+### Step 1.4: Create JWT Authentication Filter ✅
 
-**Why:** Spring Security's `AuthenticationManager` needs a `UserDetails` object. Adding `@JsonIgnore` on `getPassword()` fixes the critical password leak bug.
+**File:** `backend/src/main/java/com/gymsync/security/JwtAuthenticationFilter.java` — **DONE**
 
----
+### Step 1.5: Wire JWT Filter into SecurityConfig ✅
 
-### Step 1.3: Create Custom UserDetailsService
+**File:** `backend/src/main/java/com/gymsync/config/SecurityConfig.java` — **DONE**
 
-**File:** `backend/src/main/java/com/gymsync/security/CustomUserDetailsService.java` (NEW)
+JWT filter chain configured with:
+- `/api/auth/**` — permitAll
+- `/api/gyms` — permitAll
+- `/api/workouts/exercises` — permitAll
+- `/ws/**` — permitAll
+- Everything else — authenticated
 
-**What to implement:**
-```
-@Service
-public class CustomUserDetailsService implements UserDetailsService
+### Step 1.6: Implement Login Endpoint ✅
 
-  @Autowired UserRepository userRepository
+**File:** `backend/src/main/java/com/gymsync/controller/AuthController.java` — **DONE**
 
-  loadUserByUsername(String username) → UserDetails
-    - Call userRepository.findByUsername(username)
-    - If not found, throw UsernameNotFoundException
-    - Return the User entity (which now implements UserDetails)
-```
+Uses `RegisterRequest` DTO (not raw `User`) for registration, `LoginRequest` DTO for login. `@Valid` on register.
 
----
+### Step 1.7: Create Global CORS and Error Handling ✅
 
-### Step 1.4: Create JWT Authentication Filter
+**File:** `backend/src/main/java/com/gymsync/config/CorsConfig.java` — **DONE**
+**File:** `backend/src/main/java/com/gymsync/exception/GlobalExceptionHandler.java` — **DONE**
 
-**File:** `backend/src/main/java/com/gymsync/security/JwtAuthenticationFilter.java` (NEW)
+All `@CrossOrigin("*")` annotations removed from controllers.
 
-**What to implement:**
-```
-public class JwtAuthenticationFilter extends OncePerRequestFilter
+### Step 1.8: Fix Mobile Auth Flow ✅
 
-  @Autowired JwtUtil jwtUtil
-  @Autowired CustomUserDetailsService userDetailsService
+**Files:** `mobile-expo/src/services/AuthContext.tsx`, `mobile/src/services/AuthContext.tsx` — **DONE**
 
-  doFilterInternal(request, response, filterChain)
-    1. Extract Authorization header
-    2. If header starts with "Bearer ", extract token
-    3. If token valid → load UserDetails, create UsernamePasswordAuthenticationToken
-    4. Set SecurityContextHolder authentication
-    5. Continue filter chain
-```
+JWT token storage, auto-fetch user profile after login, 401 interceptor with auth callback.
 
-**Edge cases:**
-- If no Authorization header → just continue the filter chain (allow permitAll endpoints through)
-- If token is malformed/expired → clear context, continue (Spring Security will return 401 for secured endpoints)
+### Step 1.9: Fix 401 Interceptor Navigation ✅
 
----
-
-### Step 1.5: Wire JWT Filter into SecurityConfig
-
-**File:** `backend/src/main/java/com/gymsync/config/SecurityConfig.java` (MODIFY)
-
-**Changes:**
-1. Inject `JwtAuthenticationFilter` and `CustomUserDetailsService`
-2. Add `.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)` to the filter chain
-3. Remove `@CrossOrigin(origins = "*")` — will be centralized in Step 1.7
-4. Build `AuthenticationManager` using the `userDetailsService` and `passwordEncoder` beans
-
-**Updated filter chain:**
-```java
-http
-  .csrf(AbstractHttpConfigurer::disable)
-  .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-  .authorizeHttpRequests(auth -> auth
-    .requestMatchers("/api/auth/**").permitAll()
-    .requestMatchers("/api/gyms").permitAll()
-    .requestMatchers("/api/workouts/exercises").permitAll()
-    .requestMatchers("/ws/**").permitAll()
-    .anyRequest().authenticated()
-  )
-  .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-```
-
----
-
-### Step 1.6: Implement Login Endpoint
-
-**File:** `backend/src/main/java/com/gymsync/controller/AuthController.java` (MODIFY)
-
-**Replace the stub login method with:**
-```java
-@PostMapping("/login")
-public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-    Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(
-            request.getUsername(), request.getPassword()
-        )
-    );
-
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    String token = jwtUtil.generateToken(userDetails);
-    User user = userRepository.findByUsername(userDetails.getUsername())
-        .orElseThrow(() -> new RuntimeException("User not found"));
-
-    return ResponseEntity.ok(Map.of(
-        "token", token,
-        "type", "Bearer",
-        "userId", user.getId(),
-        "username", user.getUsername()
-    ));
-}
-```
-
-**Also inject:** `AuthenticationManager` and `JwtUtil` into the constructor.
-
-**Also make `LoginRequest` public** (currently package-private).
-
----
-
-### Step 1.7: Create Global CORS and Error Handling
-
-**File:** `backend/src/main/java/com/gymsync/config/CorsConfig.java` (NEW)
-
-**What to implement:**
-```java
-@Configuration
-public class CorsConfig implements WebMvcConfigurer {
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-            .allowedOrigins("http://localhost:8080", "http://localhost:19000", "http://localhost:19006")
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
-            .allowCredentials(true);
-    }
-}
-```
-
-**File:** `backend/src/main/java/com/gymsync/exception/GlobalExceptionHandler.java` (NEW)
-
-**What to implement:**
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        // Map known messages to appropriate status codes
-        if (ex.getMessage().contains("not found")) return ResponseEntity.status(404).body(...)
-        return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
-        // Collect field errors → return 400 with details
-    }
-
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleNotFound(UsernameNotFoundException ex) {
-        return ResponseEntity.status(401).body(Map.of("error", ex.getMessage()));
-    }
-}
-```
-
-**Then:** Remove `@CrossOrigin(origins = "*")` from all four controllers (AuthController, UserController, WorkoutController, ChatController).
-
----
-
-### Step 1.8: Fix Mobile Auth Flow
-
-**File:** `mobile-expo/src/services/AuthContext.tsx` (MODIFY)
-
-**Changes:**
-1. After `login()` stores the token, call `api.get('/users/me')` with the token and `setUser(userData)`
-2. In `checkAuth()`, if a token exists, call `api.get('/users/me')` and `setUser(userData)`
-3. In `logout()`, also call `setUser(null)` (already done) — no backend logout needed for JWT
-
-**Updated `login` method:**
-```typescript
-const login = async (credentials: LoginCredentials) => {
-  const response = await api.post('/auth/login', credentials);
-  const { token } = response.data;
-  await AsyncStorage.setItem('token', token);
-  // Fetch user profile with the new token
-  const userResponse = await api.get('/users/me');
-  setUser(userResponse.data);
-};
-```
-
-**Updated `checkAuth` method:**
-```typescript
-const checkAuth = async () => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      const response = await api.get('/users/me');
-      setUser(response.data);
-    }
-  } catch (error) {
-    // Token is invalid — clear it
-    await AsyncStorage.removeItem('token');
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-**Also apply the same changes to:** `mobile/src/services/AuthContext.tsx`
-
----
-
-### Step 1.9: Fix 401 Interceptor Navigation
-
-**File:** `mobile-expo/src/services/api.ts` (MODIFY)
-
-Add a callback mechanism so the 401 interceptor can trigger logout:
-
-```typescript
-// Add at module level
-let onUnauthorizedCallback: (() => void) | null = null;
-
-export const setOnUnauthorized = (callback: () => void) => {
-  onUnauthorizedCallback = callback;
-};
-
-// In the response interceptor:
-if (error.response?.status === 401) {
-  await AsyncStorage.removeItem('token');
-  onUnauthorizedCallback?.();
-}
-```
-
-**File:** `mobile-expo/src/App.tsx` (MODIFY) — register the callback in `AppNavigator`:
-
-```typescript
-import { setOnUnauthorized } from './src/services/api';
-
-// Inside AppNavigator component:
-React.useEffect(() => {
-  setOnUnauthorized(() => {
-    // Reset navigation to Login screen
-    navigationRef.reset({ index: 0, routes: [{ name: 'Login' }] });
-  });
-}, []);
-```
-
-**Also apply to:** `mobile/src/services/api.ts`
+**Files:** `mobile-expo/src/services/api.ts`, `mobile/src/services/api.ts` — **DONE**
 
 ---
 
 ## Phase 2: High — Backend Stubs & Data Integrity
 
-> **Goal:** Replace all hardcoded/fake data with real database queries.
+> **Goal:** Replace all hardcoded/fake data with real database queries, add ownership checks, DTOs, and GymController.
 
-### Step 2.1: Create UserService
+### Step 2.1: Update UserService ~~(Create)~~ ⚠️ ALREADY EXISTS — NEEDS FIXES
 
-**File:** `backend/src/main/java/com/gymsync/service/UserService.java` (NEW)
+**File:** `backend/src/main/java/com/gymsync/service/UserService.java` (MODIFY)
 
-**What to implement:**
-```
-@Service
-public class UserService
+`UserService` already exists but needs these fixes:
 
-  @Autowired UserRepository userRepository
+1. **`updateProfile` doesn't update `email`** — add `user.setEmail(updateData.getEmail())` (the plan originally included this but the current implementation skipped it)
+2. **`findBuddies` uses in-memory filter** `userRepository.findAll().stream().filter(...)` — replace with a proper database query for performance
 
-  getUserProfile(String username) → User
-    - findByUsername, throw if not found
+**Changes:**
+```java
+// In updateProfile(), add email update:
+@Transactional
+public User updateProfile(String username, User updateData) {
+    User user = getUserByUsername(username);
+    user.setName(updateData.getName());
+    user.setEmail(updateData.getEmail());           // ADD THIS
+    user.setFitnessLevel(updateData.getFitnessLevel());
+    user.setGymLocation(updateData.getGymLocation());
+    user.setWorkoutGoals(updateData.getWorkoutGoals());
+    return userRepository.save(user);
+}
 
-  updateUserProfile(String username, User updates) → User
-    - Find user, update allowed fields (name, email, fitnessLevel, gymLocation, workoutGoals)
-    - Do NOT allow updating username, password (separate flow), or id
-    - Save and return
-
-  setSchedule(Long userId, List<TimeSlot> schedule) → User
-    - Find user, replace availableSlots, save
-
-  getSchedule(Long userId) → List<TimeSlot>
-    - Find user, return availableSlots
-
-  findBuddies(String gymLocation, String fitnessLevel) → List<User>
-    - Query by gymLocation and fitnessLevel
-    - Exclude the requesting user
-    - Add to UserRepository: findByGymLocationAndFitnessLevel(String, FitnessLevel)
+// Replace findBuddies with DB query (requires Step 2.2 repository methods):
+public List<User> findBuddies(String username, String gymLocation, String fitnessLevel) {
+    if (gymLocation != null && fitnessLevel != null) {
+        FitnessLevel level = FitnessLevel.valueOf(fitnessLevel);
+        return userRepository.findByGymLocationAndFitnessLevelAndUsernameNot(gymLocation, level, username);
+    } else if (gymLocation != null) {
+        return userRepository.findByGymLocationAndUsernameNot(gymLocation, username);
+    } else if (fitnessLevel != null) {
+        FitnessLevel level = FitnessLevel.valueOf(fitnessLevel);
+        return userRepository.findByFitnessLevelAndUsernameNot(level, username);
+    }
+    return userRepository.findByUsernameNot(username);
+}
 ```
 
 ---
@@ -327,72 +117,45 @@ public class UserService
 
 **File:** `backend/src/main/java/com/gymsync/repository/UserRepository.java` (MODIFY)
 
-Add:
+Add these methods for the `findBuddies` DB query:
+
 ```java
-List<User> findByGymLocationAndFitnessLevel(String gymLocation, FitnessLevel fitnessLevel);
-List<User> findByGymLocation(String gymLocation);
+List<User> findByGymLocationAndFitnessLevelAndUsernameNot(String gymLocation, FitnessLevel fitnessLevel, String username);
+List<User> findByGymLocationAndUsernameNot(String gymLocation, String username);
+List<User> findByFitnessLevelAndUsernameNot(FitnessLevel fitnessLevel, String username);
+List<User> findByUsernameNot(String username);
 ```
+
+**Note:** The `GymRepository` already has `findByCityContainingIgnoreCase` and `findByHasStudentDiscountTrue` ✅
 
 ---
 
-### Step 2.3: Rewrite UserController
+### Step 2.3: Update UserController (Partially Done)
 
 **File:** `backend/src/main/java/com/gymsync/controller/UserController.java` (MODIFY)
 
-**Replace all stub methods with real implementations:**
+The controller is already rewritten to use `UserService` (was done during Phase 1). Remaining fixes:
 
+1. **Add `@Valid` on `updateProfile` `@RequestBody`**:
 ```java
-@GetMapping("/me")
-public ResponseEntity<?> getMyProfile(Principal principal) {
-    User user = userService.getUserProfile(principal.getName());
-    return ResponseEntity.ok(user);
-}
-
 @PutMapping("/me")
-public ResponseEntity<?> updateProfile(Principal principal, @RequestBody @Valid User updates) {
-    User updated = userService.updateUserProfile(principal.getName(), updates);
-    return ResponseEntity.ok(updated);
-}
-
-@GetMapping("/buddies")
-public ResponseEntity<?> findBuddies(
-    Principal principal,
-    @RequestParam(required = false) String gymLocation,
-    @RequestParam(required = false) String fitnessLevel
-) {
-    User currentUser = userService.getUserProfile(principal.getName());
-    List<User> buddies = userService.findBuddies(
-        gymLocation != null ? gymLocation : currentUser.getGymLocation(),
-        fitnessLevel != null ? fitnessLevel : currentUser.getFitnessLevel().name()
-    );
-    return ResponseEntity.ok(buddies);
-}
+public ResponseEntity<?> updateProfile(@Valid @RequestBody UserUpdateRequest user, Principal principal) {
 ```
+   Note: Uses `UserUpdateRequest` DTO from Step 2.7 once created. Until then, add `@Valid` to the current `@RequestBody User user`.
 
-**Inject `UserService`** instead of no service (current state has none).
+2. **Return `UserProfileResponse` instead of raw `User`** once DTOs are created (Step 2.7).
+
+Current state doesn't need a full rewrite — just these incremental fixes.
 
 ---
 
-### Step 2.4: Fix findByIdWithExerciseSets NPE
+### Step 2.4: Fix findByIdWithExerciseSets NPE ✅ ALREADY FIXED
 
-**File:** `backend/src/main/java/com/gymsync/repository/WorkoutLogRepository.java` (MODIFY)
+**File:** `backend/src/main/java/com/gymsync/repository/WorkoutLogRepository.java` — **ALREADY RETURNS `Optional<WorkoutLog>`**
 
-Change the return type from `WorkoutLog` to `Optional<WorkoutLog>`:
+**File:** `backend/src/main/java/com/gymsync/service/WorkoutServiceImpl.java` — **ALREADY USES `.orElseThrow()`**
 
-```java
-@Query("SELECT w FROM WorkoutLog w LEFT JOIN FETCH w.exerciseSets WHERE w.id = :id")
-Optional<WorkoutLog> findByIdWithExerciseSets(@Param("id") Long id);
-```
-
-**File:** `backend/src/main/java/com/gymsync/service/WorkoutService.java` (MODIFY)
-
-Update `getWorkoutById`:
-```java
-public WorkoutLog getWorkoutById(Long workoutId) {
-    return workoutLogRepository.findByIdWithExerciseSets(workoutId)
-        .orElseThrow(() -> new RuntimeException("Workout not found with id: " + workoutId));
-}
-```
+No changes needed. Skip this step.
 
 ---
 
@@ -400,7 +163,7 @@ public WorkoutLog getWorkoutById(Long workoutId) {
 
 **File:** `backend/src/main/java/com/gymsync/controller/WorkoutController.java` (MODIFY)
 
-Add ownership validation for `getWorkout`, `deleteWorkout`, and `addExerciseSet`:
+Add a private method and call it in `getWorkout`, `deleteWorkout`, and `addExerciseSet`:
 
 ```java
 private void verifyOwnership(WorkoutLog workout, String username) {
@@ -410,18 +173,49 @@ private void verifyOwnership(WorkoutLog workout, String username) {
 }
 ```
 
-Call this method in `getWorkout`, `deleteWorkout`, and `addExerciseSet` after fetching the workout.
+Apply in these endpoints:
+- `getWorkout(@PathVariable Long id, Principal principal)` — add `verifyOwnership(workout, principal.getName())`
+- `deleteWorkout(@PathVariable Long id, Principal principal)` — add ownership check before delete
+- `addExerciseSet(@PathVariable Long workoutId, ..., Principal principal)` — add ownership check
+
+**Also remove all `"testuser"` fallbacks** (5 occurrences at lines 28, 41, 70, 85, 93):
+```java
+// BEFORE:
+String username = principal != null ? principal.getName() : "testuser";
+
+// AFTER:
+String username = principal.getName();
+```
+
+The JWT filter ensures `principal` is never null for secured endpoints.
 
 ---
 
 ### Step 2.6: Add @Valid to All @RequestBody Parameters
 
 **Files to modify:**
-- `AuthController.java` — add `@Valid` to `register(@RequestBody @Valid User user)`
-- `WorkoutController.java` — add `@Valid` to `createWorkout`, `addExerciseSet`, `createCustomExercise`
-- `ChatController.java` — add `@Valid` to `sendMessage`, `sendTyping`
 
-This activates the Bean Validation annotations (`@NotBlank`, `@Size`, `@Email`) that already exist on the `User` entity.
+| File | Method | Current | Change To |
+|------|--------|---------|-----------|
+| `WorkoutController.java` | `createWorkout` | `@RequestBody WorkoutLog` | `@RequestBody @Valid WorkoutLog` |
+| `WorkoutController.java` | `addExerciseSet` (AddSetRequest) | `@RequestBody AddSetRequest` | `@RequestBody @Valid AddSetRequest` |
+| `WorkoutController.java` | `createCustomExercise` | `@RequestBody Exercise` | `@RequestBody @Valid Exercise` |
+| `AuthController.java` | `register` | `@Valid @RequestBody RegisterRequest` | ✅ Already done |
+| `ChatController.java` | `sendMessage` / `sendTyping` | N/A | These are `@MessageMapping` (WebSocket), not REST — `@Valid` doesn't apply the same way. Skip. |
+
+**Note:** For `@Valid` on `AddSetRequest`, add validation annotations to that inner class:
+```java
+public static class AddSetRequest {
+    @NotNull
+    private Long exerciseId;
+    @NotNull @Positive
+    private Integer setNumber;
+    private Integer reps;
+    private Double weightKg;
+    private String notes;
+    // ... getters/setters already exist
+}
+```
 
 ---
 
@@ -430,34 +224,80 @@ This activates the Bean Validation annotations (`@NotBlank`, `@Size`, `@Email`) 
 **File:** `backend/src/main/java/com/gymsync/dto/UserProfileResponse.java` (NEW)
 
 ```java
+package com.gymsync.dto;
+
+import com.gymsync.model.TimeSlot;
+import com.gymsync.model.FitnessLevel;
+import java.time.LocalDateTime;
+import java.util.Set;
+
 public class UserProfileResponse {
     private Long id;
     private String name;
     private String username;
     private String email;
-    private String fitnessLevel;
+    private FitnessLevel fitnessLevel;
     private String gymLocation;
     private String workoutGoals;
-    private List<TimeSlot> availableSlots;
+    private Set<TimeSlot> availableSlots;
     private LocalDateTime createdAt;
-    // getters/setters — NO password field
+    // NO password field
+
+    // Constructor from User entity
+    public UserProfileResponse(com.gymsync.model.User user) {
+        this.id = user.getId();
+        this.name = user.getName();
+        this.username = user.getUsername();
+        this.email = user.getEmail();
+        this.fitnessLevel = user.getFitnessLevel();
+        this.gymLocation = user.getGymLocation();
+        this.workoutGoals = user.getWorkoutGoals();
+        this.availableSlots = user.getAvailableSlots();
+        this.createdAt = user.getCreatedAt();
+    }
+
+    // getters
 }
 ```
 
 **File:** `backend/src/main/java/com/gymsync/dto/UserUpdateRequest.java` (NEW)
 
 ```java
+package com.gymsync.dto;
+
 public class UserUpdateRequest {
     private String name;
     private String email;
-    private String fitnessLevel;
+    private String fitnessLevel;  // String for flexible parsing
     private String gymLocation;
     private String workoutGoals;
-    // getters/setters — NO id, username, password fields
+    // NO id, username, password fields
+
+    // getters and setters
 }
 ```
 
-**Then update** `UserController` and `ChatController` to return `UserProfileResponse` instead of `User` entities. The `@JsonIgnore` on `User.password` (Step 1.2) is the quick fix; DTOs are the proper fix.
+**Then update `UserService.updateProfile()`** to accept `UserUpdateRequest` instead of `User`:
+```java
+public User updateProfile(String username, UserUpdateRequest req) {
+    User user = getUserByUsername(username);
+    if (req.getName() != null) user.setName(req.getName());
+    if (req.getEmail() != null) user.setEmail(req.getEmail());
+    if (req.getFitnessLevel() != null) user.setFitnessLevel(FitnessLevel.valueOf(req.getFitnessLevel()));
+    if (req.getGymLocation() != null) user.setGymLocation(req.getGymLocation());
+    if (req.getWorkoutGoals() != null) user.setWorkoutGoals(req.getWorkoutGoals());
+    return userRepository.save(user);
+}
+```
+
+**Then update `UserController`** to return `UserProfileResponse` from `getMyProfile()` and `findBuddies()`:
+```java
+@GetMapping("/me")
+public ResponseEntity<UserProfileResponse> getMyProfile(Principal principal) {
+    User user = userService.getUserByUsername(principal.getName());
+    return ResponseEntity.ok(new UserProfileResponse(user));
+}
+```
 
 ---
 
@@ -466,11 +306,24 @@ public class UserUpdateRequest {
 **File:** `backend/src/main/java/com/gymsync/controller/GymController.java` (NEW)
 
 ```java
+package com.gymsync.controller;
+
+import com.gymsync.model.Gym;
+import com.gymsync.repository.GymRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/gyms")
 public class GymController {
 
-    @Autowired private GymRepository gymRepository;
+    private final GymRepository gymRepository;
+
+    public GymController(GymRepository gymRepository) {
+        this.gymRepository = gymRepository;
+    }
 
     @GetMapping
     public List<Gym> getAllGyms() {
@@ -490,10 +343,20 @@ public class GymController {
     @GetMapping("/{id}")
     public ResponseEntity<Gym> getGym(@PathVariable Long id) {
         return gymRepository.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseThrow(() -> new RuntimeException("Gym not found"));
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new RuntimeException("Gym not found"));
     }
 }
+```
+
+**Note:** `GymRepository` already has `findByCityContainingIgnoreCase` and `findByHasStudentDiscountTrue` ✅
+
+**Also ensure `SecurityConfig` permits `/api/gyms/**`** — it already has `.requestMatchers("/api/gyms").permitAll()` but should match sub-paths too. Verify the pattern includes `/api/gyms/search`, `/api/gyms/student-discount`, `/api/gyms/{id}`:
+```java
+// In SecurityConfig, change:
+.requestMatchers("/api/gyms").permitAll()
+// To:
+.requestMatchers("/api/gyms/**").permitAll()
 ```
 
 ---
@@ -518,7 +381,7 @@ export interface WorkoutLog {
   date: string;
 }
 
-// AFTER (matching backend):
+// AFTER (matching backend WorkoutLog entity):
 export interface WorkoutLog {
   id: number;
   workoutDate: string;
@@ -536,8 +399,8 @@ Also add `ExerciseSet` to match the backend:
 ```typescript
 export interface ExerciseSet {
   id: number;
-  exerciseId: number;
-  exerciseName?: string;  // populated from join
+  exerciseId: number;      // references Exercise.id
+  exerciseName?: string;   // populated from join (backend ExerciseSet.exercise.name)
   setNumber: number;
   reps: number | null;
   weightKg: number | null;
@@ -547,6 +410,10 @@ export interface ExerciseSet {
 }
 ```
 
+**Note:** Backend `ExerciseSet` uses `Exercise exercise` (ManyToOne EAGER), so the backend serializes it as a nested object. The mobile `ExerciseSet` type needs to handle this — either:
+- Request the backend to add `@JsonIgnore` on `ExerciseSet.exercise` and `@Transient exerciseName` field, OR
+- Adapt the mobile type to expect `{ exercise: { id, name, ... } }` instead of flat `exerciseId`/`exerciseName`
+
 Fix `Exercise` interface:
 
 ```typescript
@@ -555,15 +422,15 @@ export interface Exercise {
   id: number;
   name: string;
   category: string;
-  muscleGroup: string;  // wrong field name
+  muscleGroup: string;  // wrong — backend uses primaryMuscleGroup (enum)
 }
 
-// AFTER:
+// AFTER (matching backend Exercise entity):
 export interface Exercise {
   id: number;
   name: string;
-  category: string;
-  primaryMuscleGroup: string;
+  category: string;            // ExerciseCategory enum: STRENGTH, CARDIO, etc.
+  primaryMuscleGroup: string;  // MuscleGroup enum: CHEST, BACK, etc.
   secondaryMuscleGroup?: string;
   description?: string;
   isCustom: boolean;
@@ -586,7 +453,7 @@ Create a screen that displays workout details (date, duration, calories, notes, 
 <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
 ```
 
-**Also apply to:** `mobile/App.tsx` (or root App.tsx)
+**Also apply to:** `mobile/App.tsx`
 
 ---
 
@@ -599,8 +466,7 @@ In the `useEffect` for `selectedPartner`, disconnect the previous connection bef
 ```typescript
 useEffect(() => {
   if (selectedPartner) {
-    // Disconnect previous connection before creating a new one
-    chatSocket.disconnect();
+    chatSocket.disconnect();  // disconnect previous
     connectSocket();
     loadHistory();
   }
@@ -844,13 +710,15 @@ public ResponseEntity<?> updateWorkout(
     WorkoutLog existing = workoutService.getWorkoutById(id);
     verifyOwnership(existing, principal.getName());
     // Update allowed fields: notes, durationMinutes, caloriesBurned, rating
-    existing.setNotes(updates.getNotes());
-    existing.setDurationMinutes(updates.getDurationMinutes());
-    existing.setCaloriesBurned(updates.getCaloriesBurned());
-    existing.setRating(updates.getRating());
-    return ResponseEntity.ok(workoutLogRepository.save(existing));
+    if (updates.getNotes() != null) existing.setNotes(updates.getNotes());
+    if (updates.getDurationMinutes() != null) existing.setDurationMinutes(updates.getDurationMinutes());
+    if (updates.getCaloriesBurned() != null) existing.setCaloriesBurned(updates.getCaloriesBurned());
+    if (updates.getRating() != null) existing.setRating(updates.getRating());
+    return ResponseEntity.ok(workoutService.updateWorkout(existing));
 }
 ```
+
+Add `updateWorkout(WorkoutLog)` to `WorkoutService` interface and `WorkoutServiceImpl`.
 
 ---
 
@@ -859,6 +727,19 @@ public ResponseEntity<?> updateWorkout(
 **File:** `backend/src/main/java/com/gymsync/controller/ChatController.java` (MODIFY)
 
 Remove `@Controller` — `@RestController` already includes it. Having both is redundant.
+
+Current code (lines 24-26):
+```java
+@Controller
+@RestController
+@RequestMapping("/api/chat")
+```
+
+Change to:
+```java
+@RestController
+@RequestMapping("/api/chat")
+```
 
 ---
 
@@ -896,7 +777,7 @@ private String endTime;
 
 ### Step 4.7: Fix getWorkoutStats Performance
 
-**File:** `backend/src/main/java/com/gymsync/service/WorkoutService.java` (MODIFY)
+**File:** `backend/src/main/java/com/gymsync/service/WorkoutServiceImpl.java` (MODIFY)
 
 Replace the in-memory list loading with COUNT queries:
 
@@ -933,7 +814,9 @@ Remove duplicate entries for `@stomp/stompjs`, `sockjs-client`, and `text-encodi
 
 **File:** `backend/src/main/java/com/gymsync/controller/WorkoutController.java` (MODIFY)
 
-Replace all occurrences of `principal != null ? principal.getName() : "testuser"` with just `principal.getName()`. If principal is null (shouldn't happen with JWT), the request should fail with 401.
+Replace all 5 occurrences of `principal != null ? principal.getName() : "testuser"` with just `principal.getName()`. If principal is null (shouldn't happen with JWT), the request should fail with 401.
+
+**Note:** This is also partially addressed in Step 2.5 (ownership checks). Do both together.
 
 ---
 
@@ -1205,14 +1088,14 @@ Add a step in the `mobile-expo` job:
 
 ## Summary: Files Changed Per Phase
 
-| Phase | New Files | Modified Files |
-|-------|-----------|----------------|
-| Phase 1 | `JwtUtil.java`, `CustomUserDetailsService.java`, `JwtAuthenticationFilter.java`, `CorsConfig.java`, `GlobalExceptionHandler.java` | `User.java`, `SecurityConfig.java`, `AuthController.java`, `AuthContext.tsx` (×2), `api.ts` (×2), `App.tsx` (×2) |
-| Phase 2 | `UserService.java`, `UserProfileResponse.java`, `UserUpdateRequest.java`, `GymController.java` | `UserRepository.java`, `UserController.java`, `WorkoutLogRepository.java`, `WorkoutService.java`, `WorkoutController.java`, `ChatController.java`, `ExerciseSet.java` |
-| Phase 3 | `WorkoutDetailScreen.tsx` | `types/index.ts` (×2), `App.tsx` (×2), `ChatScreen.tsx` (×2), `LoginScreen.tsx` (×2), `RegisterScreen.tsx` (×2), `WorkoutsScreen.tsx` (×2), `LogWorkoutScreen.tsx` (×2), `ProfileScreen.tsx` (×2), `GymsScreen.tsx` (×2) |
-| Phase 4 | `ChatService.java` | `ChatController.java`, `WorkoutController.java`, `WorkoutService.java`, `WorkoutLogRepository.java`, `TimeSlot.java`, `WorkoutLog.java`, `pom.xml`, `mobile/package.json` |
-| Phase 5 | — | `api.ts` (×2), `ChatWebSocketService.ts` (×2), `HomeScreen.tsx` (×2), `WorkoutsScreen.tsx` (×2), `AuthContext.test.tsx`, `RegisterScreen.tsx` (×2), `WorkoutControllerTest.java` |
-| Phase 6 | `.dockerignore`, `AuthControllerTest.java`, `UserControllerTest.java`, `JwtUtilTest.java` | `ci.yml`, `Dockerfile`, `application.properties`, `application-test.properties`, 5 E2E/integration test files |
+| Phase | New Files | Modified Files | Status |
+|-------|-----------|---------------|--------|
+| Phase 1 | `JwtUtil.java`, `CustomUserDetailsService.java`, `JwtAuthenticationFilter.java`, `CorsConfig.java`, `GlobalExceptionHandler.java`, `LoginRequest.java`, `RegisterRequest.java` | `User.java`, `SecurityConfig.java`, `AuthController.java`, `ChatController.java`, `AuthContext.tsx` (×2), `api.ts` (×2) | ✅ Done |
+| Phase 2 | `GymController.java`, `UserProfileResponse.java`, `UserUpdateRequest.java` | `UserService.java`, `UserRepository.java`, `UserController.java`, `WorkoutController.java`, `SecurityConfig.java`, `ExerciseSet.java` | ❌ Pending |
+| Phase 3 | `WorkoutDetailScreen.tsx` | `types/index.ts` (×2), `App.tsx` (×2), `ChatScreen.tsx` (×2), `LoginScreen.tsx` (×2), `RegisterScreen.tsx` (×2), `WorkoutsScreen.tsx` (×2), `LogWorkoutScreen.tsx` (×2), `ProfileScreen.tsx` (×2), `GymsScreen.tsx` (×2) | ❌ Pending |
+| Phase 4 | `ChatService.java` | `ChatController.java`, `WorkoutController.java`, `WorkoutService.java`, `WorkoutLogRepository.java`, `TimeSlot.java`, `WorkoutLog.java`, `pom.xml`, `mobile/package.json` | ❌ Pending |
+| Phase 5 | — | `api.ts` (×2), `ChatWebSocketService.ts` (×2), `HomeScreen.tsx` (×2), `WorkoutsScreen.tsx` (×2), `AuthContext.test.tsx`, `RegisterScreen.tsx` (×2), `WorkoutControllerTest.java` | ❌ Pending |
+| Phase 6 | `.dockerignore`, `AuthControllerTest.java`, `UserControllerTest.java`, `JwtUtilTest.java` | `ci.yml`, `Dockerfile`, `application.properties`, `application-test.properties`, 5 E2E/integration test files | ❌ Pending |
 
 **Total new files:** ~10  
 **Total modified files:** ~30 (many exist in both `mobile/` and `mobile-expo/`, so ~45 file edits)  
