@@ -3,8 +3,7 @@ package com.gymsync.controller;
 import com.gymsync.model.ChatMessage;
 import com.gymsync.model.MessageType;
 import com.gymsync.model.User;
-import com.gymsync.repository.ChatMessageRepository;
-import com.gymsync.repository.UserRepository;
+import com.gymsync.service.ChatService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,12 +14,10 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,10 +27,7 @@ class ChatControllerTest {
     private SimpMessageSendingOperations messagingTemplate;
 
     @Mock
-    private ChatMessageRepository chatMessageRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    private ChatService chatService;
 
     private Principal principal;
 
@@ -68,16 +62,12 @@ class ChatControllerTest {
         message.setReceiver(receiver);
         message.setContent("Hello!");
         message.setTimestamp(LocalDateTime.now());
-
-        chatController = new ChatController(messagingTemplate, chatMessageRepository, userRepository);
     }
 
     @Test
-    void sendMessage_ShouldSaveAndSendMessage() {
+    void sendMessage_ShouldCallServiceAndNotify() {
         // Given
-        when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
-        when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
-        when(chatMessageRepository.save(any())).thenReturn(message);
+        when(chatService.sendMessage("sender", "receiver", "Hello!", MessageType.CHAT)).thenReturn(message);
 
         ChatController.ChatMessageRequest request = new ChatController.ChatMessageRequest();
         request.setReceiverUsername("receiver");
@@ -88,31 +78,13 @@ class ChatControllerTest {
         chatController.sendMessage(request, principal);
 
         // Then
-        verify(chatMessageRepository).save(any(ChatMessage.class));
+        verify(chatService).sendMessage("sender", "receiver", "Hello!", MessageType.CHAT);
         verify(messagingTemplate).convertAndSendToUser(eq("receiver"), eq("/queue/messages"), any());
-    }
-
-    @Test
-    void sendMessage_WhenSenderNotFound_ShouldThrowException() {
-        // Given
-        Principal unknownPrincipal = () -> "unknown";
-        when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
-
-        ChatController.ChatMessageRequest request = new ChatController.ChatMessageRequest();
-        request.setReceiverUsername("receiver");
-        request.setContent("Hello!");
-
-        // When & Then
-        assertThatThrownBy(() -> chatController.sendMessage(request, unknownPrincipal))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Sender not found");
     }
 
     @Test
     void sendTypingNotification_ShouldSendNotification() {
         // Given
-        when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
-
         ChatController.TypingRequest request = new ChatController.TypingRequest();
         request.setReceiverUsername("receiver");
         request.setTyping(true);
@@ -127,18 +99,51 @@ class ChatControllerTest {
     }
 
     @Test
-    void getChatHistory_ShouldReturnMessages() {
+    void getChatHistory_ShouldDelegateToService() {
         // Given
-        when(userRepository.findByUsername("sender")).thenReturn(Optional.of(sender));
-        when(userRepository.findByUsername("receiver")).thenReturn(Optional.of(receiver));
-        when(chatMessageRepository.findConversation(sender, receiver))
-                .thenReturn(Arrays.asList(message));
+        when(chatService.getConversation("sender", "receiver"))
+                .thenReturn(java.util.List.of(new ChatController.ChatMessageResponse(message)));
 
         // When
         var result = chatController.getChatHistory("receiver", principal);
 
         // Then
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        verify(chatService).getConversation("sender", "receiver");
+        assert result != null;
+        assert result.size() == 1;
+    }
+
+    @Test
+    void markAsRead_ShouldCallService() {
+        // When
+        chatController.markAsRead(1L, principal);
+
+        // Then
+        verify(chatService).markAsRead(1L, "sender");
+    }
+
+    @Test
+    void getUnreadCount_ShouldCallService() {
+        // Given
+        when(chatService.getUnreadCount("sender")).thenReturn(Map.of("count", 5L));
+
+        // When
+        var result = chatController.getUnreadCount(principal);
+
+        // Then
+        verify(chatService).getUnreadCount("sender");
+        assert result.get("count").equals(5L);
+    }
+
+    @Test
+    void getChatPartners_ShouldCallService() {
+        // Given
+        when(chatService.getChatPartners("sender")).thenReturn(java.util.List.of());
+
+        // When
+        chatController.getChatPartners(principal);
+
+        // Then
+        verify(chatService).getChatPartners("sender");
     }
 }
