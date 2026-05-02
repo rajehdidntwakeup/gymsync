@@ -89,6 +89,11 @@ public class WorkoutServiceImpl implements WorkoutService {
         return exerciseRepository.save(exercise);
     }
 
+    @Transactional
+    public WorkoutLog updateWorkout(WorkoutLog workoutLog) {
+        return workoutLogRepository.save(workoutLog);
+    }
+
     public Map<String, Object> getWorkoutStats(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -100,8 +105,10 @@ public class WorkoutServiceImpl implements WorkoutService {
         Long weekCount = workoutLogRepository.countWorkoutsInDateRange(user, weekStart, now);
         Long monthCount = workoutLogRepository.countWorkoutsInDateRange(user, monthStart, now);
         
+        Long totalWorkouts = workoutLogRepository.countByUser(user);
+        
         return Map.of(
-            "totalWorkouts", workoutLogRepository.findByUserOrderByWorkoutDateDesc(user).size(),
+            "totalWorkouts", totalWorkouts,
             "thisWeek", weekCount,
             "thisMonth", monthCount
         );

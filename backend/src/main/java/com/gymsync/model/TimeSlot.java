@@ -1,11 +1,18 @@
 package com.gymsync.model;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.Pattern;
 
 @Embeddable
 public class TimeSlot {
+    @Pattern(regexp = "MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY",
+             message = "dayOfWeek must be a valid day name")
     private String dayOfWeek;
+
+    @Pattern(regexp = "\\d{2}:\\d{2}", message = "startTime must be in HH:mm format")
     private String startTime;
+
+    @Pattern(regexp = "\\d{2}:\\d{2}", message = "endTime must be in HH:mm format")
     private String endTime;
 
     public TimeSlot() {}

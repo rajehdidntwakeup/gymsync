@@ -1,6 +1,8 @@
 package com.gymsync.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class WorkoutLog {
     private String notes;
     private Integer durationMinutes;
     private Integer caloriesBurned;
+    @Min(1) @Max(5)
     private Double rating; // 1-5 user rating of workout
 
     @OneToMany(mappedBy = "workoutLog", cascade = CascadeType.ALL, orphanRemoval = true)

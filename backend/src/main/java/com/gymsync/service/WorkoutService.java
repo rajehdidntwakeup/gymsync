@@ -14,5 +14,6 @@ public interface WorkoutService {
     List<Exercise> getAllExercises(Long userId);
     List<Exercise> searchExercises(String query);
     Exercise createCustomExercise(Long userId, Exercise exercise);
+    WorkoutLog updateWorkout(WorkoutLog workoutLog);
     Map<String, Object> getWorkoutStats(Long userId);
 }

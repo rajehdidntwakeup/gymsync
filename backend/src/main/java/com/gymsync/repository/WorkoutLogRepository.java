@@ -18,6 +18,8 @@ public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
     List<WorkoutLog> findByUserAndWorkoutDateBetweenOrderByWorkoutDateDesc(
             User user, LocalDate start, LocalDate end);
     
+    Long countByUser(User user);
+
     @Query("SELECT wl FROM WorkoutLog wl WHERE wl.user = :user AND wl.workoutDate = :date")
     List<WorkoutLog> findByUserAndWorkoutDate(@Param("user") User user, @Param("date") LocalDate date);
     

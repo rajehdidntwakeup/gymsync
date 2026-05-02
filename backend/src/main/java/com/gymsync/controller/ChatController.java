@@ -2,70 +2,48 @@ package com.gymsync.controller;
 
 import com.gymsync.model.ChatMessage;
 import com.gymsync.model.MessageType;
-import com.gymsync.model.User;
-import com.gymsync.repository.ChatMessageRepository;
-import com.gymsync.repository.UserRepository;
+import com.gymsync.service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
-@Controller
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
 
     private final SimpMessageSendingOperations messagingTemplate;
-    private final ChatMessageRepository chatMessageRepository;
-    private final UserRepository userRepository;
+    private final ChatService chatService;
 
     public ChatController(SimpMessageSendingOperations messagingTemplate,
-                         ChatMessageRepository chatMessageRepository,
-                         UserRepository userRepository) {
+                         ChatService chatService) {
         this.messagingTemplate = messagingTemplate;
-        this.chatMessageRepository = chatMessageRepository;
-        this.userRepository = userRepository;
+        this.chatService = chatService;
     }
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessageRequest request, Principal principal) {
-        String senderUsername = principal.getName();
-
-        User sender = userRepository.findByUsername(senderUsername)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-
-        User receiver = userRepository.findByUsername(request.getReceiverUsername())
-                .orElseThrow(() -> new RuntimeException("Receiver not found"));
-
-        ChatMessage message = new ChatMessage();
-        message.setSender(sender);
-        message.setReceiver(receiver);
-        message.setContent(request.getContent());
-        message.setType(request.getType() != null ? request.getType() : MessageType.CHAT);
-
-        ChatMessage saved = chatMessageRepository.save(message);
+        ChatMessage saved = chatService.sendMessage(
+                principal.getName(),
+                request.getReceiverUsername(),
+                request.getContent(),
+                request.getType()
+        );
 
         // Send to receiver
         messagingTemplate.convertAndSendToUser(
-                receiver.getUsername(),
+                saved.getReceiver().getUsername(),
                 "/queue/messages",
                 new ChatMessageResponse(saved)
         );
 
         // Send confirmation to sender
         messagingTemplate.convertAndSendToUser(
-                sender.getUsername(),
+                saved.getSender().getUsername(),
                 "/queue/sent",
                 Map.of("messageId", saved.getId(), "status", "delivered")
         );
@@ -73,36 +51,26 @@ public class ChatController {
 
     @MessageMapping("/chat.typing")
     public void sendTypingNotification(@Payload TypingRequest request, Principal principal) {
-        User sender = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         messagingTemplate.convertAndSendToUser(
                 request.getReceiverUsername(),
                 "/queue/typing",
-                Map.of("username", sender.getUsername(), "typing", request.isTyping())
+                Map.of("username", principal.getName(), "typing", request.isTyping())
         );
     }
 
     @GetMapping("/history/{partnerUsername}")
     public List<ChatMessageResponse> getChatHistory(@PathVariable String partnerUsername, Principal principal) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        User partner = userRepository.findByUsername(partnerUsername)
-                .orElseThrow(() -> new RuntimeException("Partner not found"));
-
-        return chatMessageRepository.findConversation(user, partner)
-                .stream()
-                .map(ChatMessageResponse::new)
-                .toList();
+        return chatService.getConversation(principal.getName(), partnerUsername);
     }
 
     @GetMapping("/unread")
     public Map<String, Long> getUnreadCount(Principal principal) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return chatService.getUnreadCount(principal.getName());
+    }
 
-        return Map.of("count", chatMessageRepository.countUnreadMessages(user));
+    @PutMapping("/messages/{messageId}/read")
+    public void markAsRead(@PathVariable Long messageId, Principal principal) {
+        chatService.markAsRead(messageId, principal.getName());
     }
 
     @PostMapping("/send")
@@ -117,18 +85,7 @@ public class ChatController {
 
     @GetMapping("/partners")
     public List<Map<String, Object>> getChatPartners(Principal principal) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return chatMessageRepository.findChatPartners(user)
-                .stream()
-                .map(partner -> Map.<String, Object>of(
-                        "id", partner.getId(),
-                        "username", partner.getUsername(),
-                        "name", partner.getName(),
-                        "fitnessLevel", partner.getFitnessLevel()
-                ))
-                .toList();
+        return chatService.getChatPartners(principal.getName());
     }
 
     // DTO classes

@@ -58,6 +58,31 @@ public class WorkoutController {
         return ResponseEntity.ok(workoutService.createWorkout(user.getId(), workoutLog));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<WorkoutLog> updateWorkout(
+            @PathVariable Long id,
+            @RequestBody WorkoutLogUpdateRequest updateRequest,
+            Principal principal) {
+        WorkoutLog workout = workoutService.getWorkoutById(id);
+        verifyOwnership(workout, requireUsername(principal));
+
+        // Only update allowed fields
+        if (updateRequest.getNotes() != null) {
+            workout.setNotes(updateRequest.getNotes());
+        }
+        if (updateRequest.getDurationMinutes() != null) {
+            workout.setDurationMinutes(updateRequest.getDurationMinutes());
+        }
+        if (updateRequest.getCaloriesBurned() != null) {
+            workout.setCaloriesBurned(updateRequest.getCaloriesBurned());
+        }
+        if (updateRequest.getRating() != null) {
+            workout.setRating(updateRequest.getRating());
+        }
+
+        return ResponseEntity.ok(workoutService.updateWorkout(workout));
+    }
+
     @PostMapping("/{workoutId}/sets")
     public ResponseEntity<WorkoutLog> addExerciseSet(
             @PathVariable Long workoutId,
@@ -116,7 +141,7 @@ public class WorkoutController {
         return ResponseEntity.ok(workoutService.getWorkoutStats(user.getId()));
     }
 
-    // DTO
+    // DTOs
     public static class AddSetRequest {
         @NotNull
         private Long exerciseId;
@@ -136,5 +161,21 @@ public class WorkoutController {
         public void setWeightKg(Double weightKg) { this.weightKg = weightKg; }
         public String getNotes() { return notes; }
         public void setNotes(String notes) { this.notes = notes; }
+    }
+
+    public static class WorkoutLogUpdateRequest {
+        private String notes;
+        private Integer durationMinutes;
+        private Integer caloriesBurned;
+        private Double rating;
+
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
+        public Integer getDurationMinutes() { return durationMinutes; }
+        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+        public Integer getCaloriesBurned() { return caloriesBurned; }
+        public void setCaloriesBurned(Integer caloriesBurned) { this.caloriesBurned = caloriesBurned; }
+        public Double getRating() { return rating; }
+        public void setRating(Double rating) { this.rating = rating; }
     }
 }
