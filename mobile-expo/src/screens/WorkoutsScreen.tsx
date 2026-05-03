@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,6 +27,7 @@ interface WorkoutLog {
 export default function WorkoutsScreen() {
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
   const [stats, setStats] = useState({ totalWorkouts: 0, thisWeek: 0, thisMonth: 0 });
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const navigation = useNavigation<NativeStackNavigationProp<StackParamList>>();
@@ -45,6 +48,8 @@ export default function WorkoutsScreen() {
     } catch (err) {
       console.error('Failed to load workouts:', err);
       setError('Failed to load workouts. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,10 +59,34 @@ export default function WorkoutsScreen() {
     setRefreshing(false);
   };
 
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      'Delete Workout',
+      'Are you sure you want to delete this workout? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/workouts/${id}`);
+              setWorkouts((prev) => prev.filter((w) => w.id !== id));
+            } catch (err) {
+              console.error('Failed to delete workout:', err);
+              Alert.alert('Error', 'Failed to delete workout. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderWorkout = ({ item }: { item: WorkoutLog }) => (
     <TouchableOpacity
       style={styles.workoutCard}
       onPress={() => navigation.navigate('WorkoutDetail', { workoutId: item.id })}
+      onLongPress={() => handleDelete(item.id)}
     >
       <View style={styles.workoutHeader}>
         <Text style={styles.workoutDate}>
@@ -91,6 +120,14 @@ export default function WorkoutsScreen() {
       )}
     </TouchableOpacity>
   );
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -139,6 +176,7 @@ export default function WorkoutsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   statsCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',

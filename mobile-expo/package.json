@@ -21,6 +21,7 @@
     "@stomp/stompjs": "^7.0.0",
     "axios": "^1.6.2",
     "expo": "~55.0.6",
+    "expo-constants": "^55.0.15",
     "expo-status-bar": "~55.0.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",

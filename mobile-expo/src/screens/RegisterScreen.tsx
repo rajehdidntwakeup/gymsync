@@ -45,7 +45,15 @@ export default function RegisterScreen({ navigation }: any) {
 
     setError('');
     try {
-      await register(form as any);
+      await register({
+        name: form.name,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        fitnessLevel: form.fitnessLevel as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+        gymLocation: form.gymLocation || undefined,
+        workoutGoals: form.workoutGoals || undefined,
+      });
     } catch (err) {
       setError('Registration failed. Please try again.');
       console.error('Registration failed:', err);
