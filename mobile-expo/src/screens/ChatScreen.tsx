@@ -8,10 +8,10 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../services/AuthContext';
-import chatSocket from '../services/chatSocket';
+import chatWebSocketService from '../services/ChatWebSocketService';
 import { ChatMessage, ChatPartner } from '../types';
 import api from '../services/api';
 
@@ -21,6 +21,7 @@ export default function ChatScreen({ route }: any) {
   const [inputText, setInputText] = useState('');
   const [partners, setPartners] = useState<ChatPartner[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(partnerUsername);
+  const [loading, setLoading] = useState(true);
   const [typing, setTyping] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -32,37 +33,35 @@ export default function ChatScreen({ route }: any) {
   useEffect(() => {
     if (selectedPartner) {
       // Disconnect any previous socket connection before connecting to new partner
-      chatSocket.disconnect();
+      chatWebSocketService.disconnect();
       connectSocket();
       loadHistory();
     }
     return () => {
-      chatSocket.disconnect();
+      chatWebSocketService.disconnect();
     };
   }, [selectedPartner]);
 
   const connectSocket = async () => {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      setError('Not authenticated. Please log in again.');
-      return;
-    }
-
-    chatSocket.connect(
-      token,
-      (msg) => {
-        setError('');
-        setMessages(prev => [...prev, msg]);
-      },
-      (notif) => {
-        if (notif.username === selectedPartner) {
-          setTyping(notif.typing);
+    try {
+      await chatWebSocketService.connect(
+        (msg) => {
+          setError('');
+          setMessages(prev => [...prev, msg]);
+        },
+        (notif) => {
+          if (notif.username === selectedPartner) {
+            setTyping(notif.typing);
+          }
+        },
+        (data) => {
+          // Sent confirmation received
+          console.log('Message sent confirmed:', data);
         }
-      },
-      () => {
-        setError('Connection lost. Trying to reconnect...');
-      }
-    );
+      );
+    } catch (err) {
+      setError('Not authenticated or connection failed. Please log in again.');
+    }
   };
 
   const loadPartners = async () => {
@@ -73,6 +72,8 @@ export default function ChatScreen({ route }: any) {
     } catch (error) {
       console.error('Failed to load partners:', error);
       setError('Failed to load chat partners. Pull to retry.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,7 +91,7 @@ export default function ChatScreen({ route }: any) {
 
   const sendMessage = () => {
     if (!inputText.trim() || !selectedPartner) return;
-    chatSocket.sendMessage(selectedPartner, inputText);
+    chatWebSocketService.sendMessage(selectedPartner, inputText);
     setInputText('');
   };
 
@@ -123,6 +124,14 @@ export default function ChatScreen({ route }: any) {
       </View>
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   if (!selectedPartner) {
     return (
@@ -181,6 +190,7 @@ export default function ChatScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 20, fontWeight: 'bold', padding: 15 },
   partnerItem: { padding: 15, borderBottomWidth: 1, borderColor: '#eee' },
   selectedPartner: { backgroundColor: '#e3f2fd' },

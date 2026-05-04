@@ -8,6 +8,18 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(),
 }));
 
+// Mock expo-constants (ES module that Jest can't transform)
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      extra: {
+        apiUrl: 'http://localhost:8080',
+      },
+    },
+  },
+}));
+
 describe('API Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -42,10 +54,12 @@ describe('API Service', () => {
   });
 
   it('should have request interceptor configured', () => {
-    expect(api.interceptors.request.handlers?.length).toBeGreaterThan(0);
+    const handlers = api.interceptors.request.handlers;
+    expect(handlers != null ? handlers.length : 0).toBeGreaterThan(0);
   });
 
   it('should have response interceptor configured', () => {
-    expect(api.interceptors.response.handlers?.length).toBeGreaterThan(0);
+    const handlers = api.interceptors.response.handlers;
+    expect(handlers != null ? handlers.length : 0).toBeGreaterThan(0);
   });
 });

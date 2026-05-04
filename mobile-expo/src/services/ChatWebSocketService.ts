@@ -1,23 +1,12 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { ChatMessage, TypingNotification } from '../types';
 
-const WS_URL = 'http://localhost:8080/ws/chat';
-
-export interface ChatMessage {
-  id?: number;
-  senderUsername: string;
-  receiverUsername: string;
-  content: string;
-  timestamp?: string;
-  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'TYPING';
-  read?: boolean;
-}
-
-export interface TypingNotification {
-  username: string;
-  typing: boolean;
-}
+const WS_URL = Constants.expoConfig?.extra?.wsUrl
+  ? Constants.expoConfig.extra.wsUrl
+  : 'http://localhost:8080/ws/chat';
 
 class ChatWebSocketService {
   private client: Client | null = null;
