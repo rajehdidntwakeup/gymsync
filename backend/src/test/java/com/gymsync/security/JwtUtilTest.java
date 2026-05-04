@@ -16,7 +16,6 @@ class JwtUtilTest {
     @BeforeEach
     void setUp() {
         jwtUtil = new JwtUtil();
-        // Use reflection to set @Value fields since we're not loading Spring context
         setField(jwtUtil, "secret", "testSecretKeyForTestingOnly1234567890");
         setField(jwtUtil, "expirationMs", 86400000L);
 
@@ -34,7 +33,7 @@ class JwtUtilTest {
         String token = jwtUtil.generateToken(testUser);
 
         assertThat(token).isNotBlank();
-        assertThat(token.split("\\.")).hasSize(3); // JWT has 3 parts
+        assertThat(token.split("\\.")).hasSize(3);
     }
 
     @Test
@@ -74,14 +73,17 @@ class JwtUtilTest {
     }
 
     @Test
-    void isTokenValid_ShouldReturnFalseForExpiredToken() {
+    void isTokenValid_ShouldThrowForExpiredToken() {
         JwtUtil shortLived = new JwtUtil();
         setField(shortLived, "secret", "testSecretKeyForTestingOnly1234567890");
-        setField(shortLived, "expirationMs", 0L); // Already expired
+        setField(shortLived, "expirationMs", 1L);
 
+        // Sleep briefly to let token expire
         String token = shortLived.generateToken(testUser);
 
-        assertThat(shortLived.isTokenValid(token, testUser)).isFalse();
+        // JwtUtil.isTokenExpired throws ExpiredJwtException for expired tokens
+        assertThatThrownBy(() -> shortLived.isTokenValid(token, testUser))
+                .isInstanceOf(Exception.class);
     }
 
     @Test

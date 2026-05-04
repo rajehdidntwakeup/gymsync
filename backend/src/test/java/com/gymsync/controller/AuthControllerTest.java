@@ -19,9 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -133,8 +132,8 @@ class AuthControllerTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        assertThatThrownBy(() -> authController.login(loginRequest))
-                .isInstanceOf(BadCredentialsException.class);
+        assertThatExceptionOfType(BadCredentialsException.class)
+                .isThrownBy(() -> authController.login(loginRequest));
     }
 
     @Test
@@ -147,8 +146,8 @@ class AuthControllerTest {
                 .thenReturn(null);
         when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authController.login(loginRequest))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found");
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> authController.login(loginRequest))
+                .withMessageContaining("User not found");
     }
 }
