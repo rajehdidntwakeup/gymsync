@@ -22,7 +22,10 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-          
+      
+      - name: Run Checkstyle
+        run: mvn checkstyle:check
+
       - name: Build with Maven (H2 Database)
         run: mvn clean test package -Dspring.profiles.active=test
         env:
@@ -54,6 +57,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
         
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
         run: npm test
 
@@ -76,9 +82,6 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Lint
-        run: npm run lint
-
       - name: Type check
         run: npx tsc --noEmit
 
@@ -95,20 +98,26 @@ jobs:
       - name: Build Docker image
         run: docker build -t gymsync-backend:latest .
         
-      - name: Verify Docker image starts
+      - name: Test Docker image
         run: |
-          # Start container in background and check it boots successfully
-          docker run -d --name gymsync-test -p 8080:8080 gymsync-backend:latest
+          docker run -d --name gymsync-test -p 8080:8080 \
+            -e SPRING_DATASOURCE_URL=jdbc:h2:mem:testdb \
+            -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
+            -e SPRING_DATASOURCE_USERNAME=sa \
+            -e SPRING_DATASOURCE_PASSWORD= \
+            -e SPRING_PROFILES_ACTIVE=test \
+            -e SPRING_JPA_HIBERNATE_DDL_AUTO=create \
+            gymsync-backend:latest
           # Wait up to 30s for the app to start
           for i in $(seq 1 30); do
-            if docker logs gymsync-test 2>&1 | grep -q "Started GymSyncApplication"; then
-              echo "App started successfully"
+            if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
+              echo "App started and health check passed"
               docker stop gymsync-test
               exit 0
             fi
             sleep 1
           done
-          echo "App failed to start within 30s"
+          echo "App failed health check within 30s"
           docker logs gymsync-test
           docker stop gymsync-test
           exit 1
