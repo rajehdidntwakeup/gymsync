@@ -106,6 +106,7 @@ jobs:
             -e SPRING_DATASOURCE_USERNAME=sa \
             -e SPRING_DATASOURCE_PASSWORD= \
             -e SPRING_PROFILES_ACTIVE=test \
+            -e SPRING_JPA_HIBERNATE_DDL_AUTO=create \
             gymsync-backend:latest
           # Wait up to 30s for the app to start
           for i in $(seq 1 30); do
