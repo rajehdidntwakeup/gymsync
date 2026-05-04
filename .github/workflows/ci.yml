@@ -110,7 +110,7 @@ jobs:
             gymsync-backend:latest
           # Wait up to 30s for the app to start
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/api/auth/register > /dev/null 2>&1; then
+            if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
               echo "App started and health check passed"
               docker stop gymsync-test
               exit 0
