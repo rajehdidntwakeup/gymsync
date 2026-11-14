@@ -46,11 +46,11 @@ the schema, not Hibernate.
 
 ### Option B: H2 In-Memory (No PostgreSQL needed)
 
-Use the `test` profile to skip PostgreSQL entirely:
+Use the `h2` profile to run without PostgreSQL:
 
 ```bash
 cd backend
-./mvnw spring-boot:run -Dspring.profiles.active=test
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 ```
 
 - H2 auto-creates tables (`ddl-auto=create-drop`)
@@ -75,7 +75,7 @@ export DB_PASSWORD=your_password
 **With H2 (no DB setup needed):**
 ```bash
 cd backend
-./mvnw spring-boot:run -Dspring.profiles.active=test
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 ```
 
 The backend starts on **http://localhost:8080**. Verify it's running:
@@ -402,7 +402,7 @@ This is the end-to-end flow: backend + mobile together.
 
 ```bash
 cd backend
-./mvnw spring-boot:run -Dspring.profiles.active=test
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 # Wait for "Started GymSyncApplication" log
 ```
 
@@ -450,7 +450,7 @@ cd backend
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Build fails on checkstyle | Checkstyle runs in Docker | Already skipped with `-Dcheckstyle.skip=true` |
-| Container exits immediately | Missing H2 config | Ensure `SPRING_PROFILES_ACTIVE=test` or `docker` is set |
+| Container exits immediately | Missing H2 config | Ensure `SPRING_PROFILES_ACTIVE=h2` or `docker` is set |
 | Health check fails | App not ready yet | Wait up to 30s or check logs: `docker logs <container>` |
 
 ### WebSocket not connecting (mobile)
@@ -467,7 +467,7 @@ cd backend
 ```bash
 # ── Backend ──
 cd backend
-./mvnw spring-boot:run -Dspring.profiles.active=test   # Start with H2
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run   # Start with H2
 ./mvnw test                                              # Run all tests
 ./mvnw test -Dtest=AuthControllerTest                    # Run one test
 ./mvnw verify                                            # Test + coverage

@@ -167,23 +167,23 @@ export default function LogWorkoutScreen() {
     try {
       const workout = {
         workoutDate: date.toISOString().split('T')[0],
-        durationMinutes: duration ? parseInt(duration) : null,
-        caloriesBurned: calories ? parseInt(calories) : null,
-        rating,
-        notes: notes || null,
+        durationMinutes: duration ? parseInt(duration, 10) : null,
+        caloriesBurned: calories ? parseInt(calories, 10) : null,
+        rating: rating > 0 ? rating : null,
+        notes: notes.trim() || null,
       };
 
       const response = await api.post('/workouts', workout);
       const workoutId = response.data.id;
 
-      // Save all sets that have reps and weight filled
+      // Save every set that has reps; bodyweight sets use weightKg: null.
       for (const set of sets) {
-        if (set.reps && set.weightKg) {
+        if (set.reps) {
           await api.post(`/workouts/${workoutId}/sets`, {
             exerciseId: set.exerciseId,
             setNumber: set.setNumber,
-            reps: parseInt(set.reps),
-            weightKg: parseFloat(set.weightKg),
+            reps: parseInt(set.reps, 10),
+            weightKg: set.weightKg ? parseFloat(set.weightKg) : null,
           });
         }
       }

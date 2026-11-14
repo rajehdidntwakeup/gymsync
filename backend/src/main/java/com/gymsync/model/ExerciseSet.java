@@ -1,9 +1,9 @@
 package com.gymsync.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-
 @Entity
 @Table(name = "exercise_sets")
 public class ExerciseSet {
@@ -43,6 +43,7 @@ public class ExerciseSet {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
+    @JsonIgnore
     public WorkoutLog getWorkoutLog() { return workoutLog; }
     public void setWorkoutLog(WorkoutLog workoutLog) { this.workoutLog = workoutLog; }
 

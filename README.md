@@ -42,14 +42,15 @@ gymsync/
 ### Backend
 ```bash
 cd backend
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 ```
+The H2 profile needs no PostgreSQL. For PostgreSQL, omit the profile and set `DB_USERNAME`/`DB_PASSWORD`.
 
 ### Mobile
 ```bash
-cd mobile
+cd mobile-expo
 npm install
-npx react-native run-android  # or run-ios
+npx expo start
 ```
 
 ## Testing
@@ -58,7 +59,7 @@ npx react-native run-android  # or run-ios
 ```bash
 cd backend
 ./mvnw test                    # Run all tests
-./mvnw test -Dtest=WorkoutServiceTest  # Run specific test
+./mvnw test -Dtest=WorkoutSerializationTest  # Run specific test
 ./mvnw verify                  # Run with coverage report
 ```
 
