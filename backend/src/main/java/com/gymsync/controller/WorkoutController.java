@@ -1,5 +1,7 @@
 package com.gymsync.controller;
 
+import com.gymsync.exception.ForbiddenException;
+import com.gymsync.exception.ResourceNotFoundException;
 import com.gymsync.model.*;
 import com.gymsync.repository.UserRepository;
 import com.gymsync.service.WorkoutService;
@@ -31,7 +33,7 @@ public class WorkoutController {
 
     private void verifyOwnership(WorkoutLog workout, String username) {
         if (!workout.getUser().getUsername().equals(username)) {
-            throw new RuntimeException("You can only access your own workouts");
+            throw new ForbiddenException("You can only access your own workouts");
         }
     }
 
@@ -54,7 +56,7 @@ public class WorkoutController {
             Principal principal) {
         String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return ResponseEntity.ok(workoutService.createWorkout(user.getId(), workoutLog));
     }
 
@@ -114,7 +116,7 @@ public class WorkoutController {
     public ResponseEntity<List<Exercise>> getExercises(Principal principal) {
         String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return ResponseEntity.ok(workoutService.getAllExercises(user.getId()));
     }
 
@@ -129,7 +131,7 @@ public class WorkoutController {
             Principal principal) {
         String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return ResponseEntity.ok(workoutService.createCustomExercise(user.getId(), exercise));
     }
 
@@ -137,7 +139,7 @@ public class WorkoutController {
     public ResponseEntity<Map<String, Object>> getStats(Principal principal) {
         String username = requireUsername(principal);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return ResponseEntity.ok(workoutService.getWorkoutStats(user.getId()));
     }
 

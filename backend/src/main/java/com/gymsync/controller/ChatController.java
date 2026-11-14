@@ -2,6 +2,7 @@ package com.gymsync.controller;
 
 import com.gymsync.model.ChatMessage;
 import com.gymsync.model.MessageType;
+import com.gymsync.dto.ChatPartnerResponse;
 import com.gymsync.service.ChatService;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -91,7 +92,7 @@ public class ChatController {
     }
 
     @GetMapping("/partners")
-    public List<Map<String, Object>> getChatPartners(Principal principal) {
+    public List<ChatPartnerResponse> getChatPartners(Principal principal) {
         return chatService.getChatPartners(principal.getName());
     }
 
