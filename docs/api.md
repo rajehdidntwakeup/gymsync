@@ -7,10 +7,13 @@ http://localhost:8080/api
 
 ## Authentication
 
-All endpoints except `/auth/**` require JWT token in Authorization header:
-```
+All endpoints except `/auth/**`, `/health`, and `/gyms/**` require a JWT token:
+
+```http
 Authorization: Bearer <token>
 ```
+
+Expired or missing tokens return `401 Unauthorized`. Ownership violations return `403 Forbidden`, missing resources return `404 Not Found`, and validation errors return `400 Bad Request`.
 
 ## Endpoints
 

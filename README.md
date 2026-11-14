@@ -1,52 +1,58 @@
 # GymSync 💪
 
-Gym buddy matching + intelligent workout planning app for students and young professionals.
+Gym buddy matching + workout planning app for students and young professionals.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Spring Boot 3.x (Java 21) |
-| Database | PostgreSQL 15+ |
-| Mobile | React Native (TypeScript) |
-| Auth | JWT tokens |
-| Real-time | WebSocket |
-| ORM | Spring Data JPA |
+| Backend | Spring Boot 3.2 (Java 21) |
+| Database | PostgreSQL 15+ (H2 for local development) |
+| Mobile | React Native / Expo (TypeScript) |
+| Auth | JWT |
+| Real-time | STOMP over SockJS |
+| ORM | Spring Data JPA / Flyway |
 
 ## Project Structure
 
-```
+```text
 gymsync/
 ├── backend/          # Spring Boot API
-│   ├── src/main/java/com/gymsync/
-│   │   ├── config/   # Security, WebSocket, etc.
-│   │   ├── controller/  # REST endpoints
-│   │   ├── model/    # Entities
-│   │   ├── repository/  # Spring Data
-│   │   ├── service/  # Business logic
-│   │   └── GymSyncApplication.java
-│   └── pom.xml
-├── mobile/           # React Native app
-│   ├── src/
-│   │   ├── components/
-│   │   ├── screens/
-│   │   ├── services/ # API calls
-│   │   └── types/
-│   └── package.json
-├── docs/             # API docs, wireframes
-└── .github/workflows/ # CI/CD
+├── mobile-expo/      # Canonical Expo mobile app
+├── docker-compose.yml
+├── .env.example
+└── docs/
 ```
+
+`mobile/` is legacy/deprecated.
 
 ## Quick Start
 
-### Backend
+### Backend on H2
+
 ```bash
 cd backend
 SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 ```
-The H2 profile needs no PostgreSQL. For PostgreSQL, omit the profile and set `DB_USERNAME`/`DB_PASSWORD`.
+
+### Backend on PostgreSQL
+
+```bash
+cd backend
+export DB_USERNAME=postgres
+export DB_PASSWORD=your_password
+./mvnw spring-boot:run
+```
+
+### Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
 
 ### Mobile
+
 ```bash
 cd mobile-expo
 npm install
@@ -55,47 +61,31 @@ npx expo start
 
 ## Testing
 
-### Backend Tests (90%+ Coverage)
+### Backend
+
 ```bash
 cd backend
-./mvnw test                    # Run all tests
-./mvnw test -Dtest=WorkoutSerializationTest  # Run specific test
-./mvnw verify                  # Run with coverage report
+./mvnw test
+./mvnw verify
+./mvnw checkstyle:check
 ```
 
-### Mobile Tests
+### Mobile
+
 ```bash
-cd mobile
-npm test                       # Run tests
-npm run test:coverage          # Run with coverage
-npm run lint                   # Lint code
-npm run type-check             # TypeScript check
+cd mobile-expo
+npm test
+npm run lint
+npm run type-check
 ```
 
-### Test Coverage
-- **Unit Tests**: Service layer, Controllers, Models
-- **Integration Tests**: Full workout flow, API endpoints
-- **Repository Tests**: Database queries with H2
+## Definition of Done progress
 
-## CI/CD
+- Local H2 startup works without PostgreSQL.
+- Workout create/list/detail works without JSON recursion.
+- JWT auth includes real-time STOMP WebSocket auth.
+- Gym data is seeded.
+- CORS uses an explicit origin allowlist.
+- CI uses the Maven wrapper and JaCoCo coverage.
 
-Tests run automatically on:
-- Push to `main` or `develop`
-- Pull requests to `main`
-
-Coverage reports uploaded as artifacts.
-
-## Features (MVP)
-
-- [ ] User auth + profile (fitness level, gym location, goals)
-- [ ] Gym discovery (list/map with student discounts)
-- [ ] Workout logging (exercise library, sets/reps)
-- [ ] Gym buddy matching (schedule overlap, goals)
-
-## API Documentation
-
-See `docs/api.md`
-
-## License
-
-MIT
+See `GymSync-Remediation-Plan.md` for the full roadmap. Historical strategy docs are retained for reference.
