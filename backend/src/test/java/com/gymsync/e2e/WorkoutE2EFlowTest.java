@@ -91,7 +91,7 @@ class WorkoutE2EFlowTest {
                         .content(objectMapper.writeValueAsString(customExercise)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("My Custom Exercise"))
-                .andExpect(jsonPath("$.custom").value(true));
+                .andExpect(jsonPath("$.isCustom").value(true));
 
         // Verify custom exercise appears in list
         mockMvc.perform(get("/api/workouts/exercises"))
