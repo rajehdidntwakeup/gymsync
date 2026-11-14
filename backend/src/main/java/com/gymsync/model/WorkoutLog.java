@@ -1,5 +1,6 @@
 package com.gymsync.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
@@ -66,6 +67,7 @@ public class WorkoutLog {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
+    @JsonIgnore
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 

@@ -1,20 +1,22 @@
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Screens
-import HomeScreen from '@screens/HomeScreen';
-import GymsScreen from '@screens/GymsScreen';
-import WorkoutsScreen from '@screens/WorkoutsScreen';
-import LogWorkoutScreen from '@screens/LogWorkoutScreen';
-import ProfileScreen from '@screens/ProfileScreen';
-import ChatScreen from '@screens/ChatScreen';
-import LoginScreen from '@screens/LoginScreen';
-import RegisterScreen from '@screens/RegisterScreen';
+import HomeScreen from './screens/HomeScreen';
+import GymsScreen from './screens/GymsScreen';
+import WorkoutsScreen from './screens/WorkoutsScreen';
+import LogWorkoutScreen from './screens/LogWorkoutScreen';
+import WorkoutDetailScreen from './screens/WorkoutDetailScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import ChatScreen from './screens/ChatScreen';
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
 
-import { AuthProvider, useAuth } from '@services/AuthContext';
+import { AuthProvider, useAuth } from './services/AuthContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -24,7 +26,7 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
+          let iconName: keyof typeof MaterialCommunityIcons.glyphMap;
           switch (route.name) {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
@@ -33,7 +35,7 @@ function TabNavigator() {
               iconName = focused ? 'map-marker' : 'map-marker-outline';
               break;
             case 'Workouts':
-              iconName = focused ? 'dumbbell' : 'dumbbell';
+              iconName = 'dumbbell';
               break;
             case 'Profile':
               iconName = focused ? 'account' : 'account-outline';
@@ -44,7 +46,7 @@ function TabNavigator() {
             default:
               iconName = 'circle';
           }
-          return <Icon name={iconName} size={size} color={color} />;
+          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: 'gray',
@@ -72,6 +74,7 @@ function AppNavigator() {
         <>
           <Stack.Screen name="Main" component={TabNavigator} />
           <Stack.Screen name="LogWorkout" component={LogWorkoutScreen} />
+          <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
         </>
       ) : (
         <>
@@ -88,6 +91,7 @@ export default function App() {
     <AuthProvider>
       <NavigationContainer>
         <AppNavigator />
+        <StatusBar style="auto" />
       </NavigationContainer>
     </AuthProvider>
   );

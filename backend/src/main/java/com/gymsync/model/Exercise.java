@@ -1,5 +1,6 @@
 package com.gymsync.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -71,6 +72,7 @@ public class Exercise {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
+    @JsonProperty("isCustom")
     public boolean isCustom() { return isCustom; }
     public void setCustom(boolean custom) { isCustom = custom; }
 

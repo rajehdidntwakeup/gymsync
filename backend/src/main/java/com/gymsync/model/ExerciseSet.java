@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+
 @Entity
 @Table(name = "exercise_sets")
 public class ExerciseSet {
@@ -47,8 +48,17 @@ public class ExerciseSet {
     public WorkoutLog getWorkoutLog() { return workoutLog; }
     public void setWorkoutLog(WorkoutLog workoutLog) { this.workoutLog = workoutLog; }
 
+    @JsonIgnore
     public Exercise getExercise() { return exercise; }
     public void setExercise(Exercise exercise) { this.exercise = exercise; }
+
+    public Long getExerciseId() {
+        return exercise == null ? null : exercise.getId();
+    }
+
+    public String getExerciseName() {
+        return exercise == null ? null : exercise.getName();
+    }
 
     public Integer getSetNumber() { return setNumber; }
     public void setSetNumber(Integer setNumber) { this.setNumber = setNumber; }
