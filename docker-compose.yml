@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: gymsync
+      POSTGRES_USER: gymsync
+      POSTGRES_PASSWORD: gymsync_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - gymsync_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymsync -d gymsync"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/gymsync
+      DB_USERNAME: gymsync
+      DB_PASSWORD: gymsync_dev_password
+      JWT_SECRET: change-me-to-a-long-random-secret-at-least-32-bytes
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  gymsync_pgdata:

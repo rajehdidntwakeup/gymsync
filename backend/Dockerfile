@@ -4,7 +4,7 @@ WORKDIR /app
 COPY pom.xml checkstyle.xml ./
 RUN apk add --no-cache maven
 COPY src ./src
-RUN mvn clean package -DskipTests -Dcheckstyle.skip=true -B -Dspring.profiles.active=docker
+RUN mvn clean package -DskipTests -Dcheckstyle.skip=true -B
 
 # Run stage
 FROM eclipse-temurin:21-jre-alpine

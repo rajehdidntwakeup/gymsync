@@ -24,19 +24,18 @@ jobs:
           cache: 'maven'
       
       - name: Run Checkstyle
-        run: mvn checkstyle:check
+        run: ./mvnw checkstyle:check
 
-      - name: Build with Maven (H2 Database)
-        run: mvn clean test package -Dspring.profiles.active=test
+      - name: Test and package with Maven (H2 Database)
+        run: ./mvnw clean verify
         env:
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+          SPRING_PROFILES_ACTIVE: test
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
-          path: backend/target/site/jacoco
+          path: target/site/jacoco
 
   mobile-expo:
     runs-on: ubuntu-latest
@@ -105,8 +104,7 @@ jobs:
             -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
             -e SPRING_DATASOURCE_USERNAME=sa \
             -e SPRING_DATASOURCE_PASSWORD= \
-            -e SPRING_PROFILES_ACTIVE=test \
-            -e SPRING_JPA_HIBERNATE_DDL_AUTO=create \
+            -e SPRING_PROFILES_ACTIVE=docker \
             gymsync-backend:latest
           # Wait up to 30s for the app to start
           for i in $(seq 1 30); do
