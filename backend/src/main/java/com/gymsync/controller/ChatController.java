@@ -3,6 +3,7 @@ package com.gymsync.controller;
 import com.gymsync.model.ChatMessage;
 import com.gymsync.model.MessageType;
 import com.gymsync.service.ChatService;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -27,6 +28,9 @@ public class ChatController {
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessageRequest request, Principal principal) {
+        if (principal == null) {
+            throw new MessagingException("Unauthenticated WebSocket message");
+        }
         ChatMessage saved = chatService.sendMessage(
                 principal.getName(),
                 request.getReceiverUsername(),
@@ -51,6 +55,9 @@ public class ChatController {
 
     @MessageMapping("/chat.typing")
     public void sendTypingNotification(@Payload TypingRequest request, Principal principal) {
+        if (principal == null) {
+            throw new MessagingException("Unauthenticated WebSocket message");
+        }
         messagingTemplate.convertAndSendToUser(
                 request.getReceiverUsername(),
                 "/queue/typing",
