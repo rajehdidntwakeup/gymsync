@@ -6,7 +6,7 @@ const WS_URL = 'ws://localhost:8080/ws/chat';
 class ChatWebSocketService {
   private client: Client | null = null;
   private subscriptions: StompSubscription[] = [];
-  
+
   private callbacks = {
     onMessage: null as ((msg: ChatMessage) => void) | null,
     onTyping: null as ((notif: TypingNotification) => void) | null,
@@ -31,19 +31,19 @@ class ChatWebSocketService {
 
     this.client.onConnect = () => {
       console.log('WebSocket connected');
-      
+
       this.subscriptions.push(
-        this.client!.subscribe('/user/queue/messages', (msg: IMessage) => 
+        this.client!.subscribe('/user/queue/messages', (msg: IMessage) =>
           onMessage(JSON.parse(msg.body)))
       );
-      
+
       this.subscriptions.push(
-        this.client!.subscribe('/user/queue/typing', (msg: IMessage) => 
+        this.client!.subscribe('/user/queue/typing', (msg: IMessage) =>
           onTyping(JSON.parse(msg.body)))
       );
-      
+
       this.subscriptions.push(
-        this.client!.subscribe('/user/queue/sent', (msg: IMessage) => 
+        this.client!.subscribe('/user/queue/sent', (msg: IMessage) =>
           onSent(JSON.parse(msg.body)))
       );
     };

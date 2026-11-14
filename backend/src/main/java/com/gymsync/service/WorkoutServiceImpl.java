@@ -47,7 +47,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     public WorkoutLog createWorkout(Long userId, WorkoutLog workoutLog) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         workoutLog.setUser(user);
         return workoutLogRepository.save(workoutLog);
     }
@@ -56,13 +56,13 @@ public class WorkoutServiceImpl implements WorkoutService {
     public WorkoutLog addExerciseSet(Long workoutId, Long exerciseId, ExerciseSet set) {
         WorkoutLog workout = workoutLogRepository.findById(workoutId)
                 .orElseThrow(() -> new RuntimeException("Workout not found"));
-        
+
         Exercise exercise = exerciseRepository.findById(exerciseId)
                 .orElseThrow(() -> new RuntimeException("Exercise not found"));
-        
+
         set.setExercise(exercise);
         workout.addExerciseSet(set);
-        
+
         return workoutLogRepository.save(workout);
     }
 
@@ -83,7 +83,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     public Exercise createCustomExercise(Long userId, Exercise exercise) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         exercise.setCustom(true);
         exercise.setCreatedBy(user);
         return exerciseRepository.save(exercise);
@@ -97,16 +97,16 @@ public class WorkoutServiceImpl implements WorkoutService {
     public Map<String, Object> getWorkoutStats(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         LocalDate now = LocalDate.now();
         LocalDate weekStart = now.minusDays(7);
         LocalDate monthStart = now.minusDays(30);
-        
+
         Long weekCount = workoutLogRepository.countWorkoutsInDateRange(user, weekStart, now);
         Long monthCount = workoutLogRepository.countWorkoutsInDateRange(user, monthStart, now);
-        
+
         Long totalWorkouts = workoutLogRepository.countByUser(user);
-        
+
         return Map.of(
             "totalWorkouts", totalWorkouts,
             "thisWeek", weekCount,

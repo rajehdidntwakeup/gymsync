@@ -153,7 +153,7 @@ export default function LogWorkoutScreen() {
       {/* Exercise Sets */}
       <View style={styles.setsSection}>
         <Text style={styles.label}>Exercises</Text>
-        
+
         {sets.map((set, index) => (
           <View key={index} style={styles.setRow}>
             <Text style={styles.exerciseName}>{set.exerciseName}</Text>

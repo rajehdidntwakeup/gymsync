@@ -73,7 +73,7 @@ class WorkoutControllerTest {
         when(workoutService.getUserWorkoutsByUsername("testuser")).thenReturn(Arrays.asList(testWorkout));
 
         ResponseEntity<List<WorkoutLog>> response = workoutController.getMyWorkouts(principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).hasSize(1);
         assertThat(response.getBody().get(0).getId()).isEqualTo(1L);
@@ -84,7 +84,7 @@ class WorkoutControllerTest {
         when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
 
         ResponseEntity<WorkoutLog> response = workoutController.getWorkout(1L, principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().getId()).isEqualTo(1L);
     }
@@ -95,7 +95,7 @@ class WorkoutControllerTest {
         when(workoutService.createWorkout(eq(1L), any())).thenReturn(testWorkout);
 
         ResponseEntity<WorkoutLog> response = workoutController.createWorkout(testWorkout, principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().getId()).isEqualTo(1L);
     }
@@ -112,7 +112,7 @@ class WorkoutControllerTest {
         request.setWeightKg(60.0);
 
         ResponseEntity<WorkoutLog> response = workoutController.addExerciseSet(1L, request, principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
@@ -121,7 +121,7 @@ class WorkoutControllerTest {
         when(workoutService.getWorkoutById(1L)).thenReturn(testWorkout);
 
         ResponseEntity<Void> response = workoutController.deleteWorkout(1L, principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(workoutService).deleteWorkout(1L);
     }
@@ -132,7 +132,7 @@ class WorkoutControllerTest {
         when(workoutService.getAllExercises(1L)).thenReturn(Arrays.asList(testExercise));
 
         ResponseEntity<List<Exercise>> response = workoutController.getExercises(principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).hasSize(1);
         assertThat(response.getBody().get(0).getName()).isEqualTo("Bench Press");
@@ -143,7 +143,7 @@ class WorkoutControllerTest {
         when(workoutService.searchExercises("bench")).thenReturn(Arrays.asList(testExercise));
 
         ResponseEntity<List<Exercise>> response = workoutController.searchExercises("bench");
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().get(0).getName()).isEqualTo("Bench Press");
     }
@@ -154,7 +154,7 @@ class WorkoutControllerTest {
         when(workoutService.createCustomExercise(eq(1L), any())).thenReturn(testExercise);
 
         ResponseEntity<Exercise> response = workoutController.createCustomExercise(testExercise, principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().getName()).isEqualTo("Bench Press");
     }
@@ -170,7 +170,7 @@ class WorkoutControllerTest {
         when(workoutService.getWorkoutStats(1L)).thenReturn(stats);
 
         ResponseEntity<Map<String, Object>> response = workoutController.getStats(principal);
-        
+
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().get("totalWorkouts")).isEqualTo(10);
     }

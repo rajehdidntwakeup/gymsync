@@ -12,22 +12,22 @@ import java.util.List;
 
 @Repository
 public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
-    
+
     List<WorkoutLog> findByUserOrderByWorkoutDateDesc(User user);
-    
+
     List<WorkoutLog> findByUserAndWorkoutDateBetweenOrderByWorkoutDateDesc(
             User user, LocalDate start, LocalDate end);
-    
+
     Long countByUser(User user);
 
     @Query("SELECT wl FROM WorkoutLog wl WHERE wl.user = :user AND wl.workoutDate = :date")
     List<WorkoutLog> findByUserAndWorkoutDate(@Param("user") User user, @Param("date") LocalDate date);
-    
+
     @Query("SELECT COUNT(wl) FROM WorkoutLog wl WHERE wl.user = :user AND wl.workoutDate BETWEEN :start AND :end")
-    Long countWorkoutsInDateRange(@Param("user") User user, 
-                                   @Param("start") LocalDate start, 
+    Long countWorkoutsInDateRange(@Param("user") User user,
+                                   @Param("start") LocalDate start,
                                    @Param("end") LocalDate end);
-    
+
     @Query("SELECT wl FROM WorkoutLog wl LEFT JOIN FETCH wl.exerciseSets WHERE wl.id = :id")
     java.util.Optional<WorkoutLog> findByIdWithExerciseSets(@Param("id") Long id);
 }

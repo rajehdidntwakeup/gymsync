@@ -99,7 +99,7 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </View>
-      
+
       <View style={styles.workoutStats}>
         {item.durationMinutes && (
           <View style={styles.stat}>
@@ -114,7 +114,7 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </View>
-      
+
       {item.notes && (
         <Text style={styles.notes} numberOfLines={2}>{item.notes}</Text>
       )}

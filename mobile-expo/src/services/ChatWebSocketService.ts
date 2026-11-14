@@ -13,7 +13,7 @@ class ChatWebSocketService {
   private messageSubscription: StompSubscription | null = null;
   private typingSubscription: StompSubscription | null = null;
   private sentSubscription: StompSubscription | null = null;
-  
+
   private onMessageCallback: ((message: ChatMessage) => void) | null = null;
   private onTypingCallback: ((notification: TypingNotification) => void) | null = null;
   private onSentCallback: ((data: { messageId: number; status: string }) => void) | null = null;
@@ -47,7 +47,7 @@ class ChatWebSocketService {
 
     this.client.onConnect = () => {
       console.log('WebSocket connected');
-      
+
       // Subscribe to personal message queue
       this.messageSubscription = this.client!.subscribe(
         '/user/queue/messages',

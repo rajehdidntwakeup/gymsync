@@ -37,7 +37,7 @@ describe('API Service', () => {
 
   it('should handle token storage', async () => {
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue('test-token');
-    
+
     const token = await AsyncStorage.getItem('token');
     expect(token).toBe('test-token');
     expect(AsyncStorage.getItem).toHaveBeenCalledWith('token');

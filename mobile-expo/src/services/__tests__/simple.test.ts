@@ -10,7 +10,7 @@ describe('AuthContext Logic', () => {
   it('should require both username and password', () => {
     const validCreds = { username: 'user', password: 'pass' };
     const invalidCreds = { username: '', password: '' };
-    
+
     expect(validCreds.username.length).toBeGreaterThan(0);
     expect(validCreds.password.length).toBeGreaterThan(0);
     expect(invalidCreds.username.length).toBe(0);
@@ -38,7 +38,7 @@ describe('Auth Response', () => {
       userId: 1,
       username: 'testuser',
     };
-    
+
     expect(authResponse).toHaveProperty('token');
     expect(authResponse).toHaveProperty('type');
     expect(authResponse).toHaveProperty('userId');
@@ -54,7 +54,7 @@ describe('Auth Response', () => {
       email: 'test@test.com',
       fitnessLevel: 'BEGINNER',
     };
-    
+
     // Verify the profile data contains all User fields
     expect(profileData).toHaveProperty('id');
     expect(profileData).toHaveProperty('username');
