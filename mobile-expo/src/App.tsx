@@ -12,6 +12,8 @@ import WorkoutsScreen from './screens/WorkoutsScreen';
 import LogWorkoutScreen from './screens/LogWorkoutScreen';
 import WorkoutDetailScreen from './screens/WorkoutDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
+import BuddiesScreen from './screens/BuddiesScreen';
 import ChatScreen from './screens/ChatScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
@@ -40,6 +42,12 @@ function TabNavigator() {
             case 'Profile':
               iconName = focused ? 'account' : 'account-outline';
               break;
+            case 'Schedule':
+              iconName = focused ? 'calendar-clock' : 'calendar-clock-outline';
+              break;
+            case 'Buddies':
+              iconName = focused ? 'account-group' : 'account-group-outline';
+              break;
             case 'Chat':
               iconName = focused ? 'chat' : 'chat-outline';
               break;
@@ -56,7 +64,9 @@ function TabNavigator() {
       <Tab.Screen name="Gyms" component={GymsScreen} />
       <Tab.Screen name="Workouts" component={WorkoutsScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Buddies" component={BuddiesScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Schedule" component={ScheduleScreen} />
     </Tab.Navigator>
   );
 }
